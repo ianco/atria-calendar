@@ -8,6 +8,12 @@ from django.views.generic.list import ListView
 from swingtime import forms as swingtime_forms
 from swingtime import views as swingtime_views
 
+import asyncio
+import json
+
+from indy import anoncreds, crypto, did, ledger, pool, wallet
+from indy.error import ErrorCode, IndyError
+
 from .forms import *
 
 
@@ -176,15 +182,45 @@ def signup_view(request):
         form = SignUpForm(request.POST)
         if form.is_valid():
             form.save()
-            username = form.cleaned_data.get('username')
+            username = form.cleaned_data.get('email')
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)
             # need to auto-login with Atria custom user
             #login(request, user)
+
+            # create an Indy wallet - derive wallet name from email, and re-use raw password
+            print(" >>> registered", username, raw_password)
+            wallet_name = username.replace("@", "_")
+            wallet_name = wallet_name.replace(".", "_")
+            print(" >>> create", wallet_name, raw_password)
+
+            storage_config = {'url': 'localhost:5432'}
+            storage_credentials = {'account': 'postgres', 'password': 'mysecretpassword', 'admin_account': 'postgres', 'admin_password': 'mysecretpassword'}
+            wallet_config = {'id': wallet_name, 'storage_type': 'postgres_storage', 'storage_config': storage_config}
+            wallet_credentials = {'key': raw_password, 'storage_credentials': storage_credentials}
+
+            wallet_config_json = json.dumps(wallet_config)
+            wallet_credentials_json = json.dumps(wallet_credentials)
+
+            try:
+                run_coroutine(wallet.create_wallet, wallet_config_json, wallet_credentials_json)
+            except IndyError as ex:
+                if ex.error_code == ErrorCode.PoolLedgerConfigAlreadyExistsError:
+                    pass
+            wallet_handle = run_coroutine(wallet.open_wallet, wallet_config_json, wallet_credentials_json)
+
             return redirect('calendar_home')
     else:
         form = SignUpForm()
     return render(request, 'registration/signup.html', {'form': form})
+
+def run_coroutine(coroutine, *args):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(coroutine(*args))
+    finally:
+        loop.close()
 
 def calendar_home(request):
     """Home page shell view."""

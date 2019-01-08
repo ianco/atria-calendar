@@ -11,6 +11,8 @@ from ctypes import *
 from indy import anoncreds, crypto, did, ledger, pool, wallet
 from indy.error import ErrorCode, IndyError
 
+from django.conf import settings
+
 from .utils import get_pool_genesis_txn_path, run_coroutine, PROTOCOL_VERSION
 
 
@@ -18,8 +20,8 @@ class IndyConfig(AppConfig):
     name = 'indyconfig'
 
     def ready(self):
-        pg_dll = '/Users/icostanzo/Projects/indy-sdk/experimental/plugins/postgres_storage/target/debug/libindystrgpostgres.dylib'
-        pg_entrypoint = 'postgresstorage_init'
+        pg_dll = settings.INDY_CONFIG['storage_dll']
+        pg_entrypoint = settings.INDY_CONFIG['storage_entrypoint']
         print('Loading {}'.format(pg_dll))
         stg_lib = CDLL(pg_dll)
         result = stg_lib[pg_entrypoint]()

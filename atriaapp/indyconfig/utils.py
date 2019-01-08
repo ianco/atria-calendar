@@ -17,6 +17,9 @@ def get_pool_genesis_txn_path(pool_name):
     return path
 
 
+# this is the genesis that connects to the default indy-sdk ledger, checkout indy-sdk and run:
+#    docker build -f ci/indy-pool.dockerfile -t indy_pool .
+#    docker run -itd -p 9701-9708:9701-9708 indy_pool
 def pool_genesis_txn_data():
     pool_ip = environ.get("TEST_POOL_IP", "127.0.0.1")
 

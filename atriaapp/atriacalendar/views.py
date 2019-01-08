@@ -14,6 +14,8 @@ import json
 from indy import anoncreds, crypto, did, ledger, pool, wallet
 from indy.error import ErrorCode, IndyError
 
+from django.conf import settings
+
 from .forms import *
 
 
@@ -189,15 +191,19 @@ def signup_view(request):
             #login(request, user)
 
             # create an Indy wallet - derive wallet name from email, and re-use raw password
-            print(" >>> registered", username, raw_password)
+            print(" >>> registered", username)
             wallet_name = username.replace("@", "_")
             wallet_name = wallet_name.replace(".", "_")
-            print(" >>> create", wallet_name, raw_password)
+            print(" >>> create", wallet_name)
 
-            storage_config = {'url': 'localhost:5432'}
-            storage_credentials = {'account': 'postgres', 'password': 'mysecretpassword', 'admin_account': 'postgres', 'admin_password': 'mysecretpassword'}
-            wallet_config = {'id': wallet_name, 'storage_type': 'postgres_storage', 'storage_config': storage_config}
-            wallet_credentials = {'key': raw_password, 'storage_credentials': storage_credentials}
+            storage_config = settings.INDY_CONFIG['storage_config']
+            storage_credentials = settings.INDY_CONFIG['storage_credentials']
+            wallet_config = settings.INDY_CONFIG['wallet_config']
+            wallet_config['id'] = wallet_name
+            wallet_config['storage_config'] = storage_config
+            wallet_credentials = settings.INDY_CONFIG['wallet_credentials']
+            wallet_credentials['key'] = raw_password
+            wallet_credentials['storage_credentials'] = storage_credentials
 
             wallet_config_json = json.dumps(wallet_config)
             wallet_credentials_json = json.dumps(wallet_credentials)
@@ -205,9 +211,11 @@ def signup_view(request):
             try:
                 run_coroutine(wallet.create_wallet, wallet_config_json, wallet_credentials_json)
             except IndyError as ex:
-                if ex.error_code == ErrorCode.PoolLedgerConfigAlreadyExistsError:
+                if ex.error_code == ErrorCode.WalletAlreadyExistsError:
                     pass
             wallet_handle = run_coroutine(wallet.open_wallet, wallet_config_json, wallet_credentials_json)
+
+            print(" >>> created and opened wallet", wallet_name, "with handle", wallet_handle)
 
             return redirect('calendar_home')
     else:

@@ -43,6 +43,15 @@ INSTALLED_APPS = [
     'rest_framework',
 ]
 
+INDY_CONFIG = {
+    'storage_dll': '/Users/icostanzo/Projects/indy-sdk/experimental/plugins/postgres_storage/target/debug/libindystrgpostgres.dylib',
+    'storage_entrypoint': 'postgresstorage_init',
+    'wallet_config': {'id': '', 'storage_type': 'postgres_storage'},
+    'wallet_credentials': {'key': ''},
+    'storage_config': {'url': 'localhost:5432'},
+    'storage_credentials': {'account': 'postgres', 'password': 'mysecretpassword', 'admin_account': 'postgres', 'admin_password': 'mysecretpassword'},
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',

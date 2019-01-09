@@ -13,7 +13,7 @@ from indy.error import ErrorCode, IndyError
 
 from django.conf import settings
 
-from .utils import get_pool_genesis_txn_path, run_coroutine, PROTOCOL_VERSION
+from .indyutils import get_pool_genesis_txn_path, run_coroutine, PROTOCOL_VERSION
 
 
 class IndyConfig(AppConfig):

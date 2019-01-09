@@ -1,7 +1,13 @@
 import asyncio
+import json
 from os import environ
 from pathlib import Path
 from tempfile import gettempdir
+from django.conf import settings
+
+from indy import anoncreds, crypto, did, ledger, pool, wallet
+from indy.error import ErrorCode, IndyError
+
 
 PROTOCOL_VERSION = 2
 
@@ -44,7 +50,65 @@ def save_pool_genesis_txn_file(path):
         f.writelines(data)
 
 
-def run_coroutine(coroutine, loop=None):
-    if loop is None:
-        loop = asyncio.get_event_loop()
-    loop.run_until_complete(coroutine())
+def create_wallet(wallet_name, raw_password):
+    wallet_config_json = wallet_config(wallet_name)
+    wallet_credentials_json = wallet_credentials(raw_password)
+    try:
+        run_coroutine_with_args(wallet.create_wallet, wallet_config_json, wallet_credentials_json)
+    except IndyError as ex:
+        if ex.error_code == ErrorCode.WalletAlreadyExistsError:
+            pass
+
+
+def open_wallet(wallet_name, raw_password):
+    wallet_config_json = wallet_config(wallet_name)
+    wallet_credentials_json = wallet_credentials(raw_password)
+    wallet_handle = run_coroutine_with_args(wallet.open_wallet, wallet_config_json, wallet_credentials_json)
+    return wallet_handle
+
+
+def close_wallet(wallet_handle):
+    wallet_handle = run_coroutine_with_args(wallet.close_wallet, wallet_handle)
+
+
+def get_wallet_name(username):
+    wallet_name = username.replace("@", "_")
+    wallet_name = wallet_name.replace(".", "_")
+    return wallet_name
+
+
+def wallet_config(wallet_name):
+    storage_config = settings.INDY_CONFIG['storage_config']
+    wallet_config = settings.INDY_CONFIG['wallet_config']
+    wallet_config['id'] = wallet_name
+    wallet_config['storage_config'] = storage_config
+    wallet_config_json = json.dumps(wallet_config)
+    return wallet_config_json
+
+
+def wallet_credentials(raw_password):
+    storage_credentials = settings.INDY_CONFIG['storage_credentials']
+    wallet_credentials = settings.INDY_CONFIG['wallet_credentials']
+    wallet_credentials['key'] = raw_password
+    wallet_credentials['storage_credentials'] = storage_credentials
+    wallet_credentials_json = json.dumps(wallet_credentials)
+    return wallet_credentials_json
+
+
+def run_coroutine(coroutine):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(coroutine())
+    finally:
+        loop.close()
+
+
+def run_coroutine_with_args(coroutine, *args):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(coroutine(*args))
+    finally:
+        loop.close()
+

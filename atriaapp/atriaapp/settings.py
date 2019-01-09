@@ -64,6 +64,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+AUTHENTICATION_BACKENDS = ['indyconfig.indyauth.IndyBackend']
+
 ROOT_URLCONF = 'atriaapp.urls'
 
 TEMPLATES = [

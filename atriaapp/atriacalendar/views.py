@@ -11,8 +11,7 @@ from swingtime import views as swingtime_views
 import asyncio
 import json
 
-from indy import anoncreds, crypto, did, ledger, pool, wallet
-from indy.error import ErrorCode, IndyError
+from indyconfig.indyutils import create_wallet, get_wallet_name
 
 from django.conf import settings
 
@@ -187,48 +186,21 @@ def signup_view(request):
             username = form.cleaned_data.get('email')
             raw_password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=raw_password)
-            # need to auto-login with Atria custom user
-            #login(request, user)
+            print(" >>> registered", username)
 
             # create an Indy wallet - derive wallet name from email, and re-use raw password
-            print(" >>> registered", username)
-            wallet_name = username.replace("@", "_")
-            wallet_name = wallet_name.replace(".", "_")
+            wallet_name = get_wallet_name(username)
             print(" >>> create", wallet_name)
+            wallet_handle = create_wallet(wallet_name, raw_password)
+            print(" >>> created wallet", wallet_name)
 
-            storage_config = settings.INDY_CONFIG['storage_config']
-            storage_credentials = settings.INDY_CONFIG['storage_credentials']
-            wallet_config = settings.INDY_CONFIG['wallet_config']
-            wallet_config['id'] = wallet_name
-            wallet_config['storage_config'] = storage_config
-            wallet_credentials = settings.INDY_CONFIG['wallet_credentials']
-            wallet_credentials['key'] = raw_password
-            wallet_credentials['storage_credentials'] = storage_credentials
-
-            wallet_config_json = json.dumps(wallet_config)
-            wallet_credentials_json = json.dumps(wallet_credentials)
-
-            try:
-                run_coroutine(wallet.create_wallet, wallet_config_json, wallet_credentials_json)
-            except IndyError as ex:
-                if ex.error_code == ErrorCode.WalletAlreadyExistsError:
-                    pass
-            wallet_handle = run_coroutine(wallet.open_wallet, wallet_config_json, wallet_credentials_json)
-
-            print(" >>> created and opened wallet", wallet_name, "with handle", wallet_handle)
+            # need to auto-login with Atria custom user
+            #login(request, user)
 
             return redirect('calendar_home')
     else:
         form = SignUpForm()
     return render(request, 'registration/signup.html', {'form': form})
-
-def run_coroutine(coroutine, *args):
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    try:
-        return loop.run_until_complete(coroutine(*args))
-    finally:
-        loop.close()
 
 def calendar_home(request):
     """Home page shell view."""

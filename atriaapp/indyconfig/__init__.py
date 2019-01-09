@@ -1,1 +1,1 @@
-default_app_config = 'appconfig.apps.MyAppConfig'
+default_app_config = 'indyconfig.apps.IndyConfig'

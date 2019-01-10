@@ -74,7 +74,15 @@ def close_wallet(wallet_handle):
 def get_wallet_name(username):
     wallet_name = username.replace("@", "_")
     wallet_name = wallet_name.replace(".", "_")
-    return wallet_name
+    return 'i_{}'.format(wallet_name)
+
+
+# assume org name is something like an email
+def get_org_wallet_name(orgname):
+    wallet_name = orgname.replace("@", "_")
+    wallet_name = wallet_name.replace(".", "_")
+    wallet_name = wallet_name.replace(" ", "_")
+    return 'o_{}'.format(wallet_name)
 
 
 def wallet_config(wallet_name):

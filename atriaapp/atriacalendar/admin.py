@@ -25,3 +25,4 @@ class CustomUserAdmin(UserAdmin):
 
 admin.site.register(AtriaEventProgram)
 admin.site.register(AtriaEvent)
+

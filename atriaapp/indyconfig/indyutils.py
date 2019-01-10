@@ -60,6 +60,11 @@ def create_wallet(wallet_name, raw_password):
             pass
 
 
+def delete_wallet(wallet_name, raw_password):
+    # TODO
+    pass
+
+
 def open_wallet(wallet_name, raw_password):
     wallet_config_json = wallet_config(wallet_name)
     wallet_credentials_json = wallet_credentials(raw_password)
@@ -74,7 +79,7 @@ def close_wallet(wallet_handle):
 def get_wallet_name(username):
     wallet_name = username.replace("@", "_")
     wallet_name = wallet_name.replace(".", "_")
-    return 'i_{}'.format(wallet_name)
+    return 'i_{}'.format(wallet_name).lower()
 
 
 # assume org name is something like an email
@@ -82,7 +87,7 @@ def get_org_wallet_name(orgname):
     wallet_name = orgname.replace("@", "_")
     wallet_name = wallet_name.replace(".", "_")
     wallet_name = wallet_name.replace(" ", "_")
-    return 'o_{}'.format(wallet_name)
+    return 'o_{}'.format(wallet_name).lower()
 
 
 def wallet_config(wallet_name):

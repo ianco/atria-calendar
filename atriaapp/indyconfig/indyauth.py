@@ -15,7 +15,7 @@ class IndyBackend(ModelBackend):
             wallet_handle = None
             try:
                 wallet_handle = open_wallet(get_wallet_name(username), password)
-                request.session['wallet_handle'] = wallet_handle
+                request.session['user_wallet_handle'] = wallet_handle
                 print(" >>> Opened wallet for", username, wallet_handle)
             except IndyError:
                 # ignore errors for now
@@ -36,17 +36,18 @@ class IndyBackend(ModelBackend):
 
 
 def indy_wallet_logout(sender, user, request, **kwargs):
-    if 'wallet_handle' in request.session:
-        wallet_handle = request.session['wallet_handle']
-        try:
-            close_wallet(wallet_handle)
-            print(" >>> Closed wallet for", wallet_handle)
-        except IndyError:
-            # ignore errors for now
-            print(" >>> Failed to close wallet for", wallet_handle)
-            pass
-        finally:
-            del request.session['wallet_handle']
+    for wallet_type in ['user_wallet_handle', 'org_wallet_handle']:
+        if wallet_type in request.session:
+            wallet_handle = request.session[wallet_type]
+            try:
+                close_wallet(wallet_handle)
+                print(" >>> Closed wallet for", wallet_type, wallet_handle)
+            except IndyError:
+                # ignore errors for now
+                print(" >>> Failed to close wallet for", wallet_type, wallet_handle)
+                pass
+            finally:
+                del request.session[wallet_type]
 
 user_logged_out.connect(indy_wallet_logout)
 

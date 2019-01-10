@@ -203,7 +203,14 @@
       {% block main_nav %}
         <nav class>
         {% if request.user.is_authenticated %}
-        <p> Logged in as: {{ request.user }} </p>
+          <p> Logged in as: {{ request.user }} 
+          {% if request.session.user_wallet_handle %}
+            [wallet {{ request.session.user_wallet_handle }}]
+          {% endif %}
+          {% if request.session.org_wallet_handle %}
+            [org wallet {{ request.session.org_wallet_handle }}]
+          {% endif %}
+          </p>
         {% endif %}
 
         Languages:

@@ -29,7 +29,16 @@ class IndyConfig(AppConfig):
             print('Error unable to load wallet storage {}'.format(result))
             raise AppError('Error unable to load wallet storage {}'.format(result))
 
-        run_coroutine(run)
+        pay_dll = settings.INDY_CONFIG['payment_dll']
+        pay_entrypoint = settings.INDY_CONFIG['payment_entrypoint']
+        print('Loading {}'.format(pay_dll))
+        pay_lib = CDLL(pay_dll)
+        result = pay_lib[pay_entrypoint]()
+        if result != 0:
+            print('Error unable to load payment plug-in {}'.format(result))
+            raise AppError('Error unable to load payment plug-in {}'.format(result))
+
+        #run_coroutine(run)
         time.sleep(1)  # FIXME waiting for libindy thread complete
 
         print("App is ready!!!")
@@ -54,6 +63,6 @@ async def run():
     except IndyError as ex:
         if ex.error_code == ErrorCode.PoolLedgerConfigAlreadyExistsError:
             pass
-    pool_['handle'] = await pool.open_pool_ledger(pool_['name'], None)
-    print("Returned pool handle", pool_['handle'])
+    pool_handle = await pool.open_pool_ledger(pool_['name'], None)
+    print("Returned pool handle", pool_handle)
 

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from indyconfig.indyutils import create_wallet, delete_wallet, get_org_wallet_name
+from indyconfig.indyutils import create_wallet, delete_wallet, get_org_wallet_name, initialize_and_provision_vcx
 
 from .models import *
 
@@ -44,6 +44,10 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
             print(" >>> create", wallet_name)
             wallet_handle = create_wallet(wallet_name, raw_password)
             print(" >>> created wallet", wallet_name)
+
+            # provision VCX for this Org/Wallet
+            initialize_and_provision_vcx(wallet_name, raw_password, org_name)
+
 
     def delete_model(self, request, obj):
         print(" >>> delete", obj)

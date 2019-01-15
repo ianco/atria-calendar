@@ -4,6 +4,7 @@ django-swingtime>=0.9.0
 -e git+https://github.com/deschler/django-modeltranslation.git#egg=django-modeltranslation
 django-heroku
 python3-indy
+python3-wrapper-vcx
 django-extensions
 pygraphviz
 pydotplus

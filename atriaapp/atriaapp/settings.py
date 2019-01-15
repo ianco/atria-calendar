@@ -44,12 +44,20 @@ INSTALLED_APPS = [
 ]
 
 INDY_CONFIG = {
-    'storage_dll': '/Users/icostanzo/Projects/indy-sdk/experimental/plugins/postgres_storage/target/debug/libindystrgpostgres.dylib',
+    'storage_dll': 'libindystrgpostgres.dylib',
     'storage_entrypoint': 'postgresstorage_init',
+    'payment_dll': 'libnullpay.dylib',
+    'payment_entrypoint': 'nullpay_init',
     'wallet_config': {'id': '', 'storage_type': 'postgres_storage'},
     'wallet_credentials': {'key': ''},
     'storage_config': {'url': 'localhost:5432'},
     'storage_credentials': {'account': 'postgres', 'password': 'mysecretpassword', 'admin_account': 'postgres', 'admin_password': 'mysecretpassword'},
+    'vcx_agency_url': 'http://localhost:8080',
+    'vcx_agency_did': 'VsKV7grR1BUE29mG2Fm2kX',
+    'vcx_agency_verkey': 'Hezce2UWMZ3wUhVkh2LfKSs8nDzWwzs2Win7EzNN3YaR',
+    'vcx_payment_method': 'null',
+    'vcx_enterprise_seed': '000000000000000000000000Trustee1',
+    'vcx_genesis_path': '/tmp/atria-genesis.txt',
 }
 
 MIDDLEWARE = [

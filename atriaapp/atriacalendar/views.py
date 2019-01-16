@@ -11,7 +11,7 @@ from swingtime import views as swingtime_views
 import asyncio
 import json
 
-from indyconfig.indyutils import create_wallet, get_wallet_name
+from indyconfig.indyutils import create_wallet, get_wallet_name, initialize_and_provision_vcx
 
 from django.conf import settings
 
@@ -192,6 +192,9 @@ def signup_view(request):
             wallet_name = get_wallet_name(username)
             print(" >>> create", wallet_name)
             wallet_handle = create_wallet(wallet_name, raw_password)
+
+            # provision VCX for this Org/Wallet
+            initialize_and_provision_vcx(wallet_name, raw_password, username)
             print(" >>> created wallet", wallet_name)
 
             # need to auto-login with Atria custom user

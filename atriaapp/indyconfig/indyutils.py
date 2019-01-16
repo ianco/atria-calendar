@@ -63,13 +63,14 @@ def initialize_and_provision_vcx(wallet_name, raw_password, institution_name, in
         'agency_url': settings.INDY_CONFIG['vcx_agency_url'],
         'agency_did': settings.INDY_CONFIG['vcx_agency_did'],
         'agency_verkey': settings.INDY_CONFIG['vcx_agency_verkey'],
+        'pool_name': 'pool_' + wallet_name,
         'wallet_type': 'postgres_storage',
         'wallet_name': wallet_name,
         'wallet_key': raw_password,
         'storage_config': json.dumps(settings.INDY_CONFIG['storage_config']),
         'storage_credentials': json.dumps(settings.INDY_CONFIG['storage_credentials']),
         'payment_method': settings.INDY_CONFIG['vcx_payment_method'],
-        'enterprise_seed': settings.INDY_CONFIG['vcx_enterprise_seed']
+        'enterprise_seed': settings.INDY_CONFIG['vcx_enterprise_seed'],
     }
     
     print(" >>> Provision an agent and wallet, get back configuration details")
@@ -86,6 +87,7 @@ def initialize_and_provision_vcx(wallet_name, raw_password, institution_name, in
     config['institution_name'] = institution_name
     config['institution_logo_url'] = institution_logo_url
     config['genesis_path'] = settings.INDY_CONFIG['vcx_genesis_path']
+    config['pool_name'] = 'pool_' + wallet_name
 
     print(" >>> Initialize libvcx with new configuration for", institution_name)
     try:

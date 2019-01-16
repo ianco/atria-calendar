@@ -124,3 +124,5 @@ class AtriaOrganization(models.Model):
     status = models.CharField(max_length=8)
     password = models.CharField(max_length=12)
 
+    def __str__(self):
+        return self.org_name + ", " +  self.status

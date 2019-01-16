@@ -43,10 +43,10 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
             wallet_name = get_org_wallet_name(org_name)
             print(" >>> create", wallet_name)
             wallet_handle = create_wallet(wallet_name, raw_password)
-            print(" >>> created wallet", wallet_name)
 
             # provision VCX for this Org/Wallet
             initialize_and_provision_vcx(wallet_name, raw_password, org_name)
+            print(" >>> created wallet", wallet_name)
 
 
     def delete_model(self, request, obj):

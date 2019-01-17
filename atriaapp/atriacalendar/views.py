@@ -1,4 +1,4 @@
-from django.http import HttpResponseBadRequest
+from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.utils import timezone, translation
 from django.contrib.auth import login, authenticate
@@ -11,7 +11,9 @@ from swingtime import views as swingtime_views
 import asyncio
 import json
 
-from indyconfig.indyutils import create_wallet, get_wallet_name, initialize_and_provision_vcx
+from indyconfig.indyutils import create_wallet, open_wallet, get_wallet_name, initialize_and_provision_vcx
+from indyconfig.indyauth import indy_wallet_logout
+from indy.error import ErrorCode, IndyError
 
 from django.conf import settings
 
@@ -299,3 +301,39 @@ class EventUpdateView(TranslatedFormMixin, UpdateView):
             return super().post(*args, **kwargs)
         else:
             return HttpResponseBadRequest('Bad Request')
+
+
+# Indy-related views 
+
+def handle_wallet_login(request):
+    if request.method=='POST':
+        form = WalletLoginForm(request.POST)
+        if form.is_valid():
+            indy_wallet_logout(None, None, request)
+    
+            cd = form.cleaned_data
+
+            #now in the object cd, you have the form as a dictionary.
+            wallet_name = cd.get('wallet_name')
+            raw_password = cd.get('raw_password')
+
+            try:
+                wallet_handle = open_wallet(wallet_name, raw_password)
+                request.session['user_wallet_handle'] = wallet_handle
+                print(" >>> Opened wallet for", wallet_name, wallet_handle)
+            except IndyError:
+                # ignore errors for now
+                print(" >>> Failed to open wallet for", username)
+                pass
+
+            return HttpResponseRedirect('/')
+
+    else:
+        form = WalletLoginForm()
+
+    return render(request, 'indy/wallet_login.html', {'form': form})
+
+def handle_wallet_logout(request):
+    indy_wallet_logout(None, None, request)
+    return HttpResponseRedirect('/')
+

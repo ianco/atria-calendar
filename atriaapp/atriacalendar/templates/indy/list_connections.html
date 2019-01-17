@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% load i18n %}
+
+{% block page_title %} {% trans "List Connections" %} {% endblock %}
+
+{% block main_content %} 
+
+<form action="{% url form_handle %}" method="POST">
+    {% csrf_token %}
+    {{form.as_p}}
+    <button type="submit">Submit</button>
+</form>
+
+{% endblock %}

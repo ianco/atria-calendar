@@ -43,3 +43,11 @@ class SignUpForm(UserCreationForm):
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'email', 'password1', 'password2', )
+
+
+# Indy-related forms
+
+class WalletLoginForm(forms.Form): 
+    wallet_name = forms.CharField(label='Wallet Name', max_length=20)
+    raw_password = forms.CharField(label='Password', max_length=20, widget=forms.PasswordInput)
+

@@ -9,6 +9,7 @@ from indy import anoncreds, crypto, did, ledger, pool, wallet
 from indy.error import ErrorCode, IndyError
 from vcx.api.utils import vcx_agent_provision
 from vcx.api.vcx_init import vcx_init_with_config
+from vcx.common import shutdown
 
 
 PROTOCOL_VERSION = 2
@@ -94,6 +95,12 @@ def initialize_and_provision_vcx(wallet_name, raw_password, institution_name, in
         config_json = json.dumps(config)
         print(config_json)
         run_coroutine_with_args(vcx_init_with_config, config_json)
+    except:
+        raise
+
+    print(" >>> Shutdown vcx (for now)")
+    try:
+        shutdown(False)
     except:
         raise
 

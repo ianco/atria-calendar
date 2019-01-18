@@ -18,6 +18,7 @@ from indy.error import ErrorCode, IndyError
 from django.conf import settings
 
 from .forms import *
+from .models import *
 
 
 class TranslatedFormMixin(object):
@@ -321,13 +322,27 @@ def handle_wallet_login(request):
             wallet_name = cd.get('wallet_name')
             raw_password = cd.get('raw_password')
 
+            # get user or org associated with this wallet
+            related_user = User.objects.filter(wallet_name=wallet_name).all()
+            related_org = AtriaOrganization.objects.filter(wallet_name=wallet_name).all()
+            if len(related_user) == 0 and len(related_org) == 0:
+                raise Exception('Error wallet with no owner {}'.format(wallet_name))
+
+            # now try to open the wallet
             try:
                 wallet_handle = open_wallet(wallet_name, raw_password)
-                request.session['user_wallet_handle'] = wallet_handle
+
+                if len(related_user) > 0:
+                    request.session['user_wallet_handle'] = wallet_handle
+                    request.session['user_wallet_owner'] = related_user[0].email
+                elif len(related_org) > 0:
+                    request.session['org_wallet_handle'] = wallet_handle
+                    request.session['org_wallet_owner'] = related_org[0].org_name
+
                 print(" >>> Opened wallet for", wallet_name, wallet_handle)
             except IndyError:
                 # ignore errors for now
-                print(" >>> Failed to open wallet for", username)
+                print(" >>> Failed to open wallet for", wallet_name)
                 pass
 
             return HttpResponseRedirect('/')

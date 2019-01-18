@@ -205,11 +205,11 @@
         {% if request.user.is_authenticated %}
           <p> Logged in as: {{ request.user }} 
           {% if request.session.user_wallet_handle %}
-            [wallet {{ request.session.user_wallet_handle }}]
+            <p> [user wallet {{request.session.user_wallet_owner}}:{{ request.session.user_wallet_handle }}]
             <a href="{% url 'wallet_logout' %}">logout wallet</a>
           {% endif %}
           {% if request.session.org_wallet_handle %}
-            [org wallet {{ request.session.org_wallet_handle }}]
+            <p> [org wallet {{request.session.org_wallet_owner}}:{{ request.session.org_wallet_handle }}]
             <a href="{% url 'wallet_logout' %}">logout wallet</a>
           {% endif %}
           </p>

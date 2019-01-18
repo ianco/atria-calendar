@@ -13,14 +13,16 @@ class IndyBackend(ModelBackend):
         if user:
             print(" >>> Authenticated", username, user)
             wallet_handle = None
-            try:
-                wallet_handle = open_wallet(get_wallet_name(username), password)
-                request.session['user_wallet_handle'] = wallet_handle
-                print(" >>> Opened wallet for", username, wallet_handle)
-            except IndyError:
-                # ignore errors for now
-                print(" >>> Failed to open wallet for", username)
-                pass
+            if user.wallet_name is not None and user.wallet_name != '':
+                try:
+                    wallet_handle = open_wallet(user.wallet_name, password)
+                    request.session['user_wallet_handle'] = wallet_handle
+                    request.session['user_wallet_owner'] = user.email
+                    print(" >>> Opened wallet for", username, wallet_handle)
+                except IndyError:
+                    # ignore errors for now
+                    print(" >>> Failed to open wallet for", username)
+                    pass
         else:
             print(" >>> Not authenticated", username)
         return user
@@ -36,7 +38,8 @@ class IndyBackend(ModelBackend):
 
 
 def indy_wallet_logout(sender, user, request, **kwargs):
-    for wallet_type in ['user_wallet_handle', 'org_wallet_handle']:
+    wallet_types = {'user_wallet_handle': 'user_wallet_owner', 'org_wallet_handle': 'org_wallet_owner'}
+    for wallet_type in wallet_types:
         if wallet_type in request.session:
             wallet_handle = request.session[wallet_type]
             try:
@@ -48,6 +51,8 @@ def indy_wallet_logout(sender, user, request, **kwargs):
                 pass
             finally:
                 del request.session[wallet_type]
+                if wallet_types[wallet_type] in request.session:
+                    del request.session[wallet_types[wallet_type]]
 
 user_logged_out.connect(indy_wallet_logout)
 

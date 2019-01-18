@@ -47,7 +47,18 @@ class SignUpForm(UserCreationForm):
 
 # Indy-related forms
 
-class WalletLoginForm(forms.Form): 
+class WalletLoginForm(forms.Form):
     wallet_name = forms.CharField(label='Wallet Name', max_length=20)
     raw_password = forms.CharField(label='Password', max_length=20, widget=forms.PasswordInput)
+
+class SendConnectionInvitationForm(WalletLoginForm):
+    partner_name = forms.CharField(label='Partner Name', max_length=20)
+    pass
+
+class SendConnectionResponseForm(WalletLoginForm):
+    invitation_details = forms.CharField(label='Invitation', max_length=4000, widget=forms.Textarea)
+    pass
+
+class ListConnectionsForm(WalletLoginForm):
+    pass
 

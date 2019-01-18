@@ -59,7 +59,7 @@ def save_pool_genesis_txn_file(path):
         f.writelines(data)
 
 
-def initialize_and_provision_vcx(wallet_name, raw_password, institution_name, institution_logo_url='http://robohash.org/456'):
+def vcx_provision_config(wallet_name, raw_password, institution_name, institution_logo_url='http://robohash.org/456'):
     provisionConfig = {
         'agency_url': settings.INDY_CONFIG['vcx_agency_url'],
         'agency_did': settings.INDY_CONFIG['vcx_agency_did'],
@@ -73,7 +73,17 @@ def initialize_and_provision_vcx(wallet_name, raw_password, institution_name, in
         'payment_method': settings.INDY_CONFIG['vcx_payment_method'],
         'enterprise_seed': settings.INDY_CONFIG['vcx_enterprise_seed'],
     }
-    
+
+    provisionConfig['institution_name'] = institution_name
+    provisionConfig['institution_logo_url'] = institution_logo_url
+    provisionConfig['genesis_path'] = settings.INDY_CONFIG['vcx_genesis_path']
+    provisionConfig['pool_name'] = 'pool_' + wallet_name
+
+    return provisionConfig
+
+def initialize_and_provision_vcx(wallet_name, raw_password, institution_name, institution_logo_url='http://robohash.org/456'):
+    provisionConfig = vcx_provision_config(wallet_name, raw_password, institution_name, institution_logo_url)
+
     print(" >>> Provision an agent and wallet, get back configuration details")
     try:
         provisionConfig_json = json.dumps(provisionConfig)
@@ -105,6 +115,75 @@ def initialize_and_provision_vcx(wallet_name, raw_password, institution_name, in
         raise
 
     print(" >>> Done!!!")
+    return json.dumps(config)
+
+
+def send_connection_invitation(config, partner_name):
+    print(" >>> Initialize libvcx with new configuration for", institution_name)
+    try:
+        config_json = json.dumps(config)
+        print(config_json)
+        run_coroutine_with_args(vcx_init_with_config, config_json)
+    except:
+        raise
+
+    # create connection and generate invitation
+    try:
+        connection_to_ = run_coroutine_with_args(Connection.create, partner_name)
+        run_coroutine_with_args(connection_to_.connect, '{"use_public_did": true}')
+        run_coroutine(connection_to_.update_state)
+        invite_details = run_coroutine_with_args(connection_to_.invite_details, False)
+
+        connection_data = run_coroutine(connection_to_.serialize)
+        connection_to_.release()
+        connection_to_ = None
+    except:
+        raise
+
+    print(" >>> Shutdown vcx (for now)")
+    try:
+        shutdown(False)
+    except:
+        raise
+
+    print(" >>> Done!!!")
+    return connection_data, json.dumps(invite_details)
+
+
+def send_connection_confirmation(config, partner_name, invite_details):
+    print(" >>> Initialize libvcx with new configuration for", institution_name)
+    try:
+        config_json = json.dumps(config)
+        print(config_json)
+        run_coroutine_with_args(vcx_init_with_config, config_json)
+    except:
+        raise
+
+    # create connection and generate invitation
+    try:
+        jdetails = json.loads(invite_details)
+        connection_from_ = run_coroutine_with_args(Connection.create, partner_name, json.dumps(jdetails))
+        run_coroutine_with_args(connection_from_.connect, '{"use_public_did": true}')
+        run_coroutine(connection_from_.update_state)
+
+        connection_data = run_coroutine(connection_from_.serialize)
+        connection_from_.release()
+        connection_from_ = None
+    except:
+        raise
+
+    print(" >>> Shutdown vcx (for now)")
+    try:
+        shutdown(False)
+    except:
+        raise
+
+    print(" >>> Done!!!")
+    return connection_data
+
+
+def check_connection_status():
+    pass
 
 
 def create_wallet(wallet_name, raw_password):
@@ -169,7 +248,7 @@ def run_coroutine(coroutine):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(coroutine())
+        return loop.run_until_complete(coroutine())
     finally:
         loop.close()
 

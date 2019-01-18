@@ -38,7 +38,7 @@ class IndyConfig(AppConfig):
             print('Error unable to load payment plug-in {}'.format(result))
             raise AppError('Error unable to load payment plug-in {}'.format(result))
 
-        #run_coroutine(run)
+        run_coroutine(run)
         time.sleep(1)  # FIXME waiting for libindy thread complete
 
         print("App is ready!!!")

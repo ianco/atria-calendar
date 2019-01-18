@@ -43,9 +43,13 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
             wallet_name = get_org_wallet_name(org_name)
             print(" >>> create", wallet_name)
             wallet_handle = create_wallet(wallet_name, raw_password)
+            obj.wallet_name = wallet_name
+            super().save_model(request, obj, form, True)
 
             # provision VCX for this Org/Wallet
-            initialize_and_provision_vcx(wallet_name, raw_password, org_name)
+            config = initialize_and_provision_vcx(wallet_name, raw_password, org_name)
+            obj.vcx_config = config
+            super().save_model(request, obj, form, True)
             print(" >>> created wallet", wallet_name)
 
 

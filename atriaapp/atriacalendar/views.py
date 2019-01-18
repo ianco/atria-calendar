@@ -194,9 +194,13 @@ def signup_view(request):
             wallet_name = get_wallet_name(username)
             print(" >>> create", wallet_name)
             wallet_handle = create_wallet(wallet_name, raw_password)
+            user.wallet_name = wallet_name
+            user.save()
 
             # provision VCX for this Org/Wallet
-            initialize_and_provision_vcx(wallet_name, raw_password, username)
+            config = initialize_and_provision_vcx(wallet_name, raw_password, username)
+            user.vcx_config = config
+            user.save()
             print(" >>> created wallet", wallet_name)
 
             # need to auto-login with Atria custom user
@@ -337,3 +341,12 @@ def handle_wallet_logout(request):
     indy_wallet_logout(None, None, request)
     return HttpResponseRedirect('/')
 
+def handle_connection_request(request):
+    pass
+    
+def handle_connection_response(request):
+    pass
+    
+def list_connections(request):
+    pass
+    

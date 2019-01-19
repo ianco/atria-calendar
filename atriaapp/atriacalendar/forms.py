@@ -55,7 +55,7 @@ class SendConnectionInvitationForm(WalletLoginForm):
     partner_name = forms.CharField(label='Partner Name', max_length=20)
     pass
 
-class SendConnectionResponseForm(WalletLoginForm):
+class SendConnectionResponseForm(SendConnectionInvitationForm):
     invitation_details = forms.CharField(label='Invitation', max_length=4000, widget=forms.Textarea)
     pass
 

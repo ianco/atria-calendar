@@ -26,6 +26,7 @@ urlpatterns = [
 
     path('send_invitation/', handle_connection_request, name='send_invitation'),
     path('list_connections/', list_connections, name='list_connections'),
+    path('connection_response/', handle_connection_response, name='connection_response'),
     path('wallet_login/', handle_wallet_login, name='wallet_login'),
     path('wallet_logout/', handle_wallet_logout, name='wallet_logout'),
 ]

@@ -431,7 +431,21 @@ def handle_connection_request(request):
     return render(request, 'indy/connection_request.html', {'form': form})
     
 def handle_connection_response(request):
-    pass
+    if request.method=='POST':
+        form = SendConnectionResponseForm(request.POST)
+        if form.is_valid():
+            # TODO
+            pass
+    else:
+        # find connection request
+        connection_id = request.GET.get('id', None)
+        connections = VcxConnection.objects.filter(id=connection_id).all()
+        # TODO validate
+        form = SendConnectionResponseForm(initial={ 'wallet_name': connections[0].wallet_name, 
+                                                    'partner_name': connections[0].partner_name, 
+                                                    'invitation_details': connections[0].invitation })
+
+    return render(request, 'indy/connection_response.html', {'form': form})
     
 def list_connections(request):
     # expects a wallet to be opened in the current session
@@ -440,5 +454,5 @@ def list_connections(request):
         connections = VcxConnection.objects.filter(wallet_name=wallet_name).all()
         return render(request, 'indy/list_connections.html', {'wallet_name': wallet_name, 'connections': connections})
 
-    return render(request, 'indy/list_connections.html', {'wallet_name': 'No wallet selected', connections: []})
+    return render(request, 'indy/list_connections.html', {'wallet_name': 'No wallet selected', 'connections': []})
 

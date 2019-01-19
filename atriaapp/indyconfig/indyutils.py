@@ -9,6 +9,7 @@ from indy import anoncreds, crypto, did, ledger, pool, wallet
 from indy.error import ErrorCode, IndyError
 
 from vcx.api.connection import Connection
+from vcx.state import State, ProofState
 from vcx.api.utils import vcx_agent_provision
 from vcx.api.vcx_init import vcx_init_with_config
 from vcx.common import shutdown
@@ -124,7 +125,6 @@ def send_connection_invitation(config, partner_name):
     print(" >>> Initialize libvcx with new configuration for a connection to", partner_name)
     try:
         config_json = json.dumps(config)
-        print(config_json)
         run_coroutine_with_args(vcx_init_with_config, config_json)
     except:
         raise
@@ -149,22 +149,21 @@ def send_connection_invitation(config, partner_name):
         raise
 
     print(" >>> Done!!!")
-    return connection_data, json.dumps(invite_details)
+    return connection_data, invite_details
 
 
 def send_connection_confirmation(config, partner_name, invite_details):
-    print(" >>> Initialize libvcx with new configuration for", institution_name)
+    print(" >>> Initialize libvcx with configuration")
     try:
         config_json = json.dumps(config)
-        print(config_json)
         run_coroutine_with_args(vcx_init_with_config, config_json)
     except:
         raise
 
     # create connection and generate invitation
     try:
-        jdetails = json.loads(invite_details)
-        connection_from_ = run_coroutine_with_args(Connection.create, partner_name, json.dumps(jdetails))
+        invite_details_json = json.dumps(invite_details)
+        connection_from_ = run_coroutine_with_args(Connection.create_with_details, partner_name, invite_details_json)
         run_coroutine_with_args(connection_from_.connect, '{"use_public_did": true}')
         run_coroutine(connection_from_.update_state)
 
@@ -184,8 +183,38 @@ def send_connection_confirmation(config, partner_name, invite_details):
     return connection_data
 
 
-def check_connection_status():
-    pass
+def check_connection_status(config, connection_data):
+    print(" >>> Initialize libvcx with configuration")
+    try:
+        config_json = json.dumps(config)
+        run_coroutine_with_args(vcx_init_with_config, config_json)
+    except:
+        raise
+
+    # create connection and check status
+    try:
+        connection_to_ = run_coroutine_with_args(Connection.deserialize, connection_data)
+        run_coroutine(connection_to_.update_state)
+        connection_state = run_coroutine(connection_to_.get_state)
+        if connection_state == State.Accepted:
+            return_state = 'Active'
+        else:
+            return_state = 'Sent'
+
+        connection_data = run_coroutine(connection_to_.serialize)
+        connection_to_.release()
+        connection_to_ = None
+    except:
+        raise
+
+    print(" >>> Shutdown vcx (for now)")
+    try:
+        shutdown(False)
+    except:
+        raise
+
+    print(" >>> Done!!!")
+    return connection_data, return_state
 
 
 def create_wallet(wallet_name, raw_password):

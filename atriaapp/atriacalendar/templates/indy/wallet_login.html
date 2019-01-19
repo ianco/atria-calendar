@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
 
+{% load i18n %}
+
+{% block page_title %} {% trans "Wallet Login" %} {% endblock %}
+
 {% block main_content %} 
 
 <form action="{% url 'wallet_login' %}" method="POST">

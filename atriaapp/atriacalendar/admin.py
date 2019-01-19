@@ -70,4 +70,5 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
 admin.site.register(AtriaEventProgram)
 admin.site.register(AtriaEvent)
 admin.site.register(AtriaOrganization, AtriaOrganizationAdmin)
+admin.site.register(VcxConnection)
 

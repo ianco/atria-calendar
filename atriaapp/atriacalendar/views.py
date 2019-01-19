@@ -11,7 +11,7 @@ from swingtime import views as swingtime_views
 import asyncio
 import json
 
-from indyconfig.indyutils import create_wallet, open_wallet, get_wallet_name, initialize_and_provision_vcx, send_connection_invitation
+from indyconfig.indyutils import create_wallet, open_wallet, get_wallet_name, initialize_and_provision_vcx, send_connection_invitation, send_connection_confirmation, check_connection_status
 from indyconfig.indyauth import indy_wallet_logout
 from indy.error import ErrorCode, IndyError
 
@@ -341,12 +341,11 @@ def handle_wallet_login(request):
                 request.session['wallet_name'] = wallet_name
 
                 print(" >>> Opened wallet for", wallet_name, wallet_handle)
+                return render(request, 'indy/form_response.html', {'msg': 'Opened wallet for ' + wallet_name})
             except IndyError:
                 # ignore errors for now
                 print(" >>> Failed to open wallet for", wallet_name)
-                pass
-
-            return HttpResponseRedirect('/')
+                return render(request, 'indy/form_response.html', {'msg': 'Failed to open wallet for ' + wallet_name})
 
     else:
         form = WalletLoginForm()
@@ -355,7 +354,7 @@ def handle_wallet_login(request):
 
 def handle_wallet_logout(request):
     indy_wallet_logout(None, None, request)
-    return HttpResponseRedirect('/')
+    return render(request, 'indy/form_response.html', {'msg': 'Logged out of wallet(s)'})
 
 def handle_connection_request(request):
     if request.method=='POST':
@@ -399,31 +398,30 @@ def handle_connection_request(request):
             # set wallet password
             # TODO vcx_config['something'] = raw_password
 
-            # build the connection and get teh invitation data back
+            # build the connection and get the invitation data back
             try:
                 (connection_data, invite_data) = send_connection_invitation(json.loads(vcx_config), partner_name)
 
                 my_connection = VcxConnection(
                     wallet_name = wallet_name,
                     partner_name = partner_name,
-                    connection_data = connection_data,
+                    connection_data = json.dumps(connection_data),
                     status = 'Sent')
                 my_connection.save()
 
                 their_connection = VcxConnection(
                     wallet_name = their_wallet_name,
                     partner_name = my_name,
-                    invitation = invite_data,
+                    invitation = json.dumps(invite_data),
                     status = 'Pending')
                 their_connection.save()
 
                 print(" >>> Created invite for", wallet_name, partner_name)
+                return render(request, 'indy/form_response.html', {'msg': 'Updated connection for ' + wallet_name})
             except IndyError:
                 # ignore errors for now
                 print(" >>> Failed to create request for", wallet_name)
-                pass
-
-            return HttpResponseRedirect('/')
+                return render(request, 'indy/form_response.html', {'msg': 'Failed to create request for ' + wallet_name})
 
     else:
         form = SendConnectionInvitationForm()
@@ -434,19 +432,125 @@ def handle_connection_response(request):
     if request.method=='POST':
         form = SendConnectionResponseForm(request.POST)
         if form.is_valid():
-            # TODO
-            pass
+            # log out of current wallet, if any
+            indy_wallet_logout(None, None, request)
+    
+            cd = form.cleaned_data
+
+            #now in the object cd, you have the form as a dictionary.
+            connection_id = cd.get('connection_id')
+            wallet_name = cd.get('wallet_name')
+            raw_password = cd.get('raw_password')
+            partner_name = cd.get('partner_name')
+            invitation_details = cd.get('invitation_details')
+
+            # get user or org associated with this wallet
+            related_user = User.objects.filter(wallet_name=wallet_name).all()
+            related_org = AtriaOrganization.objects.filter(wallet_name=wallet_name).all()
+            if len(related_user) == 0 and len(related_org) == 0:
+                raise Exception('Error wallet with no owner {}'.format(wallet_name))
+
+            if 0 < len(related_user):
+                vcx_config = related_user[0].vcx_config
+                my_name = related_user[0].email
+            elif 0 < len(related_org):
+                vcx_config = related_org[0].vcx_config
+                my_name = related_org[0].org_name
+
+            # set wallet password
+            # TODO vcx_config['something'] = raw_password
+
+            # build the connection and get the invitation data back
+            try:
+                connection_data = send_connection_confirmation(json.loads(vcx_config), partner_name, json.loads(invitation_details))
+
+                connections = VcxConnection.objects.filter(id=connection_id).all()
+                # TODO validate connection id
+                my_connection = connections[0]
+                my_connection.connection_data = json.dumps(connection_data)
+                my_connection.status = 'Active'
+                my_connection.save()
+
+                print(" >>> Updated connection for", wallet_name, partner_name)
+                return render(request, 'indy/form_response.html', {'msg': 'Updated connection for ' + wallet_name})
+            except IndyError:
+                # ignore errors for now
+                print(" >>> Failed to update request for", wallet_name)
+                return render(request, 'indy/form_response.html', {'msg': 'Failed to update request for ' + wallet_name})
+
     else:
         # find connection request
         connection_id = request.GET.get('id', None)
         connections = VcxConnection.objects.filter(id=connection_id).all()
-        # TODO validate
-        form = SendConnectionResponseForm(initial={ 'wallet_name': connections[0].wallet_name, 
+        # TODO validate connection id
+        form = SendConnectionResponseForm(initial={ 'connection_id': connection_id,
+                                                    'wallet_name': connections[0].wallet_name, 
                                                     'partner_name': connections[0].partner_name, 
                                                     'invitation_details': connections[0].invitation })
 
     return render(request, 'indy/connection_response.html', {'form': form})
     
+def poll_connection_status(request):
+    if request.method=='POST':
+        form = PollConnectionStatusForm(request.POST)
+        if form.is_valid():
+            # log out of current wallet, if any
+            indy_wallet_logout(None, None, request)
+    
+            cd = form.cleaned_data
+
+            #now in the object cd, you have the form as a dictionary.
+            connection_id = cd.get('connection_id')
+            wallet_name = cd.get('wallet_name')
+            raw_password = cd.get('raw_password')
+
+            # get user or org associated with this wallet
+            related_user = User.objects.filter(wallet_name=wallet_name).all()
+            related_org = AtriaOrganization.objects.filter(wallet_name=wallet_name).all()
+            if len(related_user) == 0 and len(related_org) == 0:
+                raise Exception('Error wallet with no owner {}'.format(wallet_name))
+
+            if 0 < len(related_user):
+                vcx_config = related_user[0].vcx_config
+            elif 0 < len(related_org):
+                vcx_config = related_org[0].vcx_config
+
+            # set wallet password
+            # TODO vcx_config['something'] = raw_password
+
+            connections = VcxConnection.objects.filter(id=connection_id).all()
+            # TODO validate connection id
+            my_connection = connections[0]
+            connection_data = my_connection.connection_data
+
+            # validate connection and get the updated status
+            try:
+                (connection_data, new_status) = check_connection_status(json.loads(vcx_config), json.loads(connection_data))
+
+                connections = VcxConnection.objects.filter(id=connection_id).all()
+                # TODO validate connection id
+                my_connection = connections[0]
+                my_connection.connection_data = json.dumps(connection_data)
+                my_connection.status = new_status
+                my_connection.save()
+
+                print(" >>> Updated connection for", wallet_name)
+                return render(request, 'indy/form_response.html', {'msg': 'Updated connection for ' + wallet_name})
+            except IndyError:
+                # ignore errors for now
+                print(" >>> Failed to update request for", wallet_name)
+                return render(request, 'indy/form_response.html', {'msg': 'Failed to update request for ' + wallet_name})
+
+    else:
+        # find connection request
+        connection_id = request.GET.get('id', None)
+        connections = VcxConnection.objects.filter(id=connection_id).all()
+        # TODO validate connection id
+        form = PollConnectionStatusForm(initial={ 'connection_id': connection_id,
+                                                  'wallet_name': connections[0].wallet_name })
+
+    return render(request, 'indy/connection_status.html', {'form': form})
+
 def list_connections(request):
     # expects a wallet to be opened in the current session
     if 'wallet_name' in request.session:
@@ -455,4 +559,8 @@ def list_connections(request):
         return render(request, 'indy/list_connections.html', {'wallet_name': wallet_name, 'connections': connections})
 
     return render(request, 'indy/list_connections.html', {'wallet_name': 'No wallet selected', 'connections': []})
+
+def form_response(request):
+    msg = request.GET.get('msg', None)
+    return render(request, 'indy/form_response.html', {'msg': msg})
 

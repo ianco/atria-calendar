@@ -53,12 +53,12 @@ class WalletLoginForm(forms.Form):
 
 class SendConnectionInvitationForm(WalletLoginForm):
     partner_name = forms.CharField(label='Partner Name', max_length=20)
-    pass
 
 class SendConnectionResponseForm(SendConnectionInvitationForm):
+    connection_id = forms.IntegerField(label="Id")
     invitation_details = forms.CharField(label='Invitation', max_length=4000, widget=forms.Textarea)
-    pass
 
-class ListConnectionsForm(WalletLoginForm):
-    pass
+class PollConnectionStatusForm(WalletLoginForm):
+    connection_id = forms.IntegerField(label="Id")
+
 

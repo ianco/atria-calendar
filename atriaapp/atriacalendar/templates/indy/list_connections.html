@@ -16,7 +16,7 @@
             <a href={% url 'connection_response' %}?id={{connection.id}}>Respond</a>
         {% endif %}
         {% if connection.status == 'Sent' %}
-            <a href=''>Check Status</a>
+            <a href={% url 'check_connection' %}?id={{connection.id}}>Check Status</a>
         {% endif %}
         {% if connection.status == 'Active' %}
             <a href=''>Send</a> or <a href=''>Receive</a>

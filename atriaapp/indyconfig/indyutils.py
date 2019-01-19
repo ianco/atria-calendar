@@ -7,6 +7,8 @@ from django.conf import settings
 
 from indy import anoncreds, crypto, did, ledger, pool, wallet
 from indy.error import ErrorCode, IndyError
+
+from vcx.api.connection import Connection
 from vcx.api.utils import vcx_agent_provision
 from vcx.api.vcx_init import vcx_init_with_config
 from vcx.common import shutdown
@@ -119,7 +121,7 @@ def initialize_and_provision_vcx(wallet_name, raw_password, institution_name, in
 
 
 def send_connection_invitation(config, partner_name):
-    print(" >>> Initialize libvcx with new configuration for", institution_name)
+    print(" >>> Initialize libvcx with new configuration for a connection to", partner_name)
     try:
         config_json = json.dumps(config)
         print(config_json)

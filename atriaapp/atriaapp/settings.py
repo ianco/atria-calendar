@@ -3,6 +3,7 @@ import sys
 import datetime
 import django
 import django_heroku
+import platform
 
 try:
     # dateutil is an absolute requirement
@@ -43,10 +44,20 @@ INSTALLED_APPS = [
     'rest_framework',
 ]
 
+def file_ext():
+    if platform.system() == 'Linux':
+        return '.so'
+    elif platform.system() == 'Darwin':
+        return '.dylib'
+    elif platform.system() == 'Windows':
+        return '.dll'
+    else:
+        return '.so'
+
 INDY_CONFIG = {
-    'storage_dll': 'libindystrgpostgres.dylib',
+    'storage_dll': 'libindystrgpostgres' + file_ext(),
     'storage_entrypoint': 'postgresstorage_init',
-    'payment_dll': 'libnullpay.dylib',
+    'payment_dll': 'libnullpay' + file_ext(),
     'payment_entrypoint': 'nullpay_init',
     'wallet_config': {'id': '', 'storage_type': 'postgres_storage'},
     'wallet_credentials': {'key': ''},
@@ -169,3 +180,4 @@ MODELTRANSLATION_TRANSLATION_REGISTRY = "atriacalendar.translation"
 STATIC_URL = '/static/'
 
 django_heroku.settings(locals())
+

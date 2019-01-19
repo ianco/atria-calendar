@@ -18,6 +18,7 @@ class IndyBackend(ModelBackend):
                     wallet_handle = open_wallet(user.wallet_name, password)
                     request.session['user_wallet_handle'] = wallet_handle
                     request.session['user_wallet_owner'] = user.email
+                    request.session['wallet_name'] = user.wallet_name
                     print(" >>> Opened wallet for", username, wallet_handle)
                 except IndyError:
                     # ignore errors for now
@@ -53,6 +54,8 @@ def indy_wallet_logout(sender, user, request, **kwargs):
                 del request.session[wallet_type]
                 if wallet_types[wallet_type] in request.session:
                     del request.session[wallet_types[wallet_type]]
+                if 'wallet_name' in request.session:
+                    del request.session['wallet_name']
 
 user_logged_out.connect(indy_wallet_logout)
 

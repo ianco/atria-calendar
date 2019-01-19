@@ -2,7 +2,7 @@
 
 {% block main_content %} 
 
-<form action="{% url 'connection_request' %}" method="POST">
+<form action="{% url 'send_invitation' %}" method="POST">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Submit</button>

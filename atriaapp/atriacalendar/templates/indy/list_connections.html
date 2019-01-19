@@ -6,10 +6,23 @@
 
 {% block main_content %} 
 
-<form action="{% url form_handle %}" method="POST">
-    {% csrf_token %}
-    {{form.as_p}}
-    <button type="submit">Submit</button>
-</form>
+<p> Wallet: {{ wallet_name }}
+
+  <ul class="connections">
+    {% for connection in connections %}
+      <li>
+        {{ connection.partner_name }} {{ connection.status }}
+        {% if connection.status == 'Pending' %}
+            <a href=''>Respond</a>
+        {% endif %}
+        {% if connection.status == 'Sent' %}
+            <a href=''>Check Status</a>
+        {% endif %}
+        {% if connection.status == 'Active' %}
+            <a href=''>Send</a> or <a href=''>Receive</a>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
 
 {% endblock %}

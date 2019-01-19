@@ -24,6 +24,8 @@ urlpatterns = [
     path('event-detail/<int:pk>/', EventUpdateView.as_view(), name='swingtime-event'),
     path('event-detail/<int:event_pk>/<int:pk>/', atria_occurrence_view, name='swingtime-occurrence'),
 
+    path('send_invitation/', handle_connection_request, name='send_invitation'),
+    path('list_connections/', list_connections, name='list_connections'),
     path('wallet_login/', handle_wallet_login, name='wallet_login'),
     path('wallet_logout/', handle_wallet_logout, name='wallet_logout'),
 ]

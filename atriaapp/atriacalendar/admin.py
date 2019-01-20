@@ -44,12 +44,12 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
             wallet_name = get_org_wallet_name(org_name)
             print(" >>> create", wallet_name)
             wallet_handle = create_wallet(wallet_name, raw_password)
-            obj.wallet_name = wallet_name
             
             # save the indy wallet first
-            wallet = indy_config.IndyWallet(wallet_name=wallet_name)
+            wallet = indy_models.IndyWallet(wallet_name=wallet_name)
             wallet.save()
 
+            obj.wallet_name = wallet
             super().save_model(request, obj, form, True)
 
             # provision VCX for this Org/Wallet

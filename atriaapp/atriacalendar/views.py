@@ -198,10 +198,10 @@ def signup_view(request):
             wallet_handle = create_wallet(wallet_name, raw_password)
 
             # save the indy wallet first
-            wallet = indy_config.IndyWallet(wallet_name=wallet_name)
+            wallet = indy_models.IndyWallet(wallet_name=wallet_name)
             wallet.save()
 
-            user.wallet_name = wallet_name
+            user.wallet_name = wallet
             user.save()
 
             # provision VCX for this Org/Wallet
@@ -381,6 +381,7 @@ def handle_connection_request(request):
             related_org = AtriaOrganization.objects.filter(wallet_name=wallet_name).all()
             if len(related_user) == 0 and len(related_org) == 0:
                 raise Exception('Error wallet with no owner {}'.format(wallet_name))
+            wallet = indy_models.IndyWallet.objects.filter(wallet_name=wallet_name).first()
 
             if 0 < len(related_user):
                 vcx_config = related_user[0].vcx_config
@@ -400,6 +401,7 @@ def handle_connection_request(request):
                 their_wallet_name = target_user[0].wallet_name
             elif 0 < len(target_org):
                 their_wallet_name = target_org[0].wallet_name
+            their_wallet = indy_models.IndyWallet.objects.filter(wallet_name=their_wallet_name).first()
 
             # set wallet password
             # TODO vcx_config['something'] = raw_password
@@ -409,14 +411,14 @@ def handle_connection_request(request):
                 (connection_data, invite_data) = send_connection_invitation(json.loads(vcx_config), partner_name)
 
                 my_connection = indy_models.VcxConnection(
-                    wallet_name = wallet_name,
+                    wallet_name = wallet,
                     partner_name = partner_name,
                     connection_data = json.dumps(connection_data),
                     status = 'Sent')
                 my_connection.save()
 
                 their_connection = indy_models.VcxConnection(
-                    wallet_name = their_wallet_name,
+                    wallet_name = their_wallet,
                     partner_name = my_name,
                     invitation = json.dumps(invite_data),
                     status = 'Pending')

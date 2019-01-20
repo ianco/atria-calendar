@@ -4,6 +4,7 @@ from django.contrib.auth.admin import UserAdmin
 from indyconfig.indyutils import create_wallet, delete_wallet, get_org_wallet_name, initialize_and_provision_vcx
 
 from .models import *
+from indyconfig import models as indy_models
 
 
 @admin.register(User)
@@ -44,6 +45,11 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
             print(" >>> create", wallet_name)
             wallet_handle = create_wallet(wallet_name, raw_password)
             obj.wallet_name = wallet_name
+            
+            # save the indy wallet first
+            wallet = indy_config.IndyWallet(wallet_name=wallet_name)
+            wallet.save()
+
             super().save_model(request, obj, form, True)
 
             # provision VCX for this Org/Wallet
@@ -70,5 +76,4 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
 admin.site.register(AtriaEventProgram)
 admin.site.register(AtriaEvent)
 admin.site.register(AtriaOrganization, AtriaOrganizationAdmin)
-admin.site.register(VcxConnection)
 

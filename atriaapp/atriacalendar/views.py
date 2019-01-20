@@ -19,6 +19,7 @@ from django.conf import settings
 
 from .forms import *
 from .models import *
+from indyconfig import models as indy_models
 
 
 class TranslatedFormMixin(object):
@@ -195,6 +196,11 @@ def signup_view(request):
             wallet_name = get_wallet_name(username)
             print(" >>> create", wallet_name)
             wallet_handle = create_wallet(wallet_name, raw_password)
+
+            # save the indy wallet first
+            wallet = indy_config.IndyWallet(wallet_name=wallet_name)
+            wallet.save()
+
             user.wallet_name = wallet_name
             user.save()
 
@@ -402,14 +408,14 @@ def handle_connection_request(request):
             try:
                 (connection_data, invite_data) = send_connection_invitation(json.loads(vcx_config), partner_name)
 
-                my_connection = VcxConnection(
+                my_connection = indy_models.VcxConnection(
                     wallet_name = wallet_name,
                     partner_name = partner_name,
                     connection_data = json.dumps(connection_data),
                     status = 'Sent')
                 my_connection.save()
 
-                their_connection = VcxConnection(
+                their_connection = indy_models.VcxConnection(
                     wallet_name = their_wallet_name,
                     partner_name = my_name,
                     invitation = json.dumps(invite_data),
@@ -464,7 +470,7 @@ def handle_connection_response(request):
             try:
                 connection_data = send_connection_confirmation(json.loads(vcx_config), partner_name, json.loads(invitation_details))
 
-                connections = VcxConnection.objects.filter(id=connection_id).all()
+                connections = indy_models.VcxConnection.objects.filter(id=connection_id).all()
                 # TODO validate connection id
                 my_connection = connections[0]
                 my_connection.connection_data = json.dumps(connection_data)
@@ -481,7 +487,7 @@ def handle_connection_response(request):
     else:
         # find connection request
         connection_id = request.GET.get('id', None)
-        connections = VcxConnection.objects.filter(id=connection_id).all()
+        connections = indy_models.VcxConnection.objects.filter(id=connection_id).all()
         # TODO validate connection id
         form = SendConnectionResponseForm(initial={ 'connection_id': connection_id,
                                                     'wallet_name': connections[0].wallet_name, 
@@ -518,7 +524,7 @@ def poll_connection_status(request):
             # set wallet password
             # TODO vcx_config['something'] = raw_password
 
-            connections = VcxConnection.objects.filter(id=connection_id).all()
+            connections = indy_models.VcxConnection.objects.filter(id=connection_id).all()
             # TODO validate connection id
             my_connection = connections[0]
             connection_data = my_connection.connection_data
@@ -527,7 +533,7 @@ def poll_connection_status(request):
             try:
                 (connection_data, new_status) = check_connection_status(json.loads(vcx_config), json.loads(connection_data))
 
-                connections = VcxConnection.objects.filter(id=connection_id).all()
+                connections = indy_models.VcxConnection.objects.filter(id=connection_id).all()
                 # TODO validate connection id
                 my_connection = connections[0]
                 my_connection.connection_data = json.dumps(connection_data)
@@ -544,7 +550,7 @@ def poll_connection_status(request):
     else:
         # find connection request
         connection_id = request.GET.get('id', None)
-        connections = VcxConnection.objects.filter(id=connection_id).all()
+        connections = indy_models.VcxConnection.objects.filter(id=connection_id).all()
         # TODO validate connection id
         form = PollConnectionStatusForm(initial={ 'connection_id': connection_id,
                                                   'wallet_name': connections[0].wallet_name })
@@ -555,7 +561,7 @@ def list_connections(request):
     # expects a wallet to be opened in the current session
     if 'wallet_name' in request.session:
         wallet_name = request.session['wallet_name']
-        connections = VcxConnection.objects.filter(wallet_name=wallet_name).all()
+        connections = indy_models.VcxConnection.objects.filter(wallet_name=wallet_name).all()
         return render(request, 'indy/list_connections.html', {'wallet_name': wallet_name, 'connections': connections})
 
     return render(request, 'indy/list_connections.html', {'wallet_name': 'No wallet selected', 'connections': []})

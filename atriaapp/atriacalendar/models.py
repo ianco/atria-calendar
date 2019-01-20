@@ -4,6 +4,7 @@ from django.db import models
 from django.utils import timezone
 
 from swingtime import models as swingtime_models
+from indyconfig import models as indy_models
 
 
 USER_ROLES = (
@@ -63,7 +64,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     )
     date_joined = models.DateTimeField(default=timezone.now)
     last_login = models.DateTimeField(blank=True, null=True)
-    wallet_name = models.CharField(max_length=30, blank=True)
+    #wallet_name = models.CharField(max_length=30, blank=True)
+    wallet_name = models.ForeignKey('indyconfig.IndyWallet', to_field="wallet_name", blank = True, null=True, on_delete=models.CASCADE)
     vcx_config = models.TextField(max_length=4000, blank=True)
 
     EMAIL_FIELD = 'email'
@@ -125,21 +127,10 @@ class AtriaOrganization(models.Model):
     date_joined = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=8)
     password = models.CharField(max_length=12)
-    wallet_name = models.CharField(max_length=30, blank=True)
+    #wallet_name = models.CharField(max_length=30, blank=True)
+    wallet_name = models.ForeignKey('indyconfig.IndyWallet', to_field="wallet_name", blank = True, null=True, on_delete=models.CASCADE)
     vcx_config = models.TextField(max_length=4000, blank=True)
 
     def __str__(self):
         return self.org_name + ", " +  self.status
-
-
-# base class for vcx connections
-class VcxConnection(models.Model):
-    wallet_name = models.CharField(max_length=30)
-    partner_name = models.CharField(max_length=30)
-    invitation = models.TextField(max_length=4000, blank=True)
-    status = models.CharField(max_length=20)
-    connection_data = models.TextField(max_length=4000, blank=True)
-
-    def __str__(self):
-        return self.wallet_name + ":" + self.partner_name + ", " +  self.status
 

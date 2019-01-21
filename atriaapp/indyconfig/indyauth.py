@@ -23,10 +23,10 @@ class IndyBackend(ModelBackend):
             wallet_handle = None
             if user.wallet_name is not None and user.wallet_name != '':
                 try:
-                    wallet_handle = open_wallet(user.wallet_name, password)
+                    wallet_handle = open_wallet(user.wallet_name.wallet_name, password)
                     request.session['user_wallet_handle'] = wallet_handle
                     request.session['user_wallet_owner'] = user.email
-                    request.session['wallet_name'] = user.wallet_name
+                    request.session['wallet_name'] = user.wallet_name.wallet_name
                     print(" >>> Opened wallet for", username, wallet_handle)
                 except IndyError:
                     # ignore errors for now

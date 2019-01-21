@@ -13,6 +13,7 @@ USER_ROLES = (
     'Attendee',
 )
 
+
 class UserManager(BaseUserManager):
 
     def _create_user(self, email, password, **extra_fields):
@@ -95,6 +96,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
         return self.groups.filter(name=role).exists()
 
+
 # Code table for event programs - senior, youth, etc.
 class AtriaEventProgram(models.Model):
     '''
@@ -118,7 +120,7 @@ class AtriaEvent(swingtime_models.Event):
     location = models.CharField(max_length=100, blank=True)
 
     def __str__(self):
-        return self.title + ", " +  self.location
+        return self.title + ", " + self.location
 
 
 # Base class for organizations that use the Atria platform
@@ -133,4 +135,3 @@ class AtriaOrganization(models.Model):
 
     def __str__(self):
         return self.org_name + ", " +  self.status
-

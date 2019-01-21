@@ -1,14 +1,22 @@
+import base64
+
+from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 from django.contrib.auth.signals import user_logged_in, user_logged_out
+from rest_framework.authentication import BasicAuthentication
+from rest_framework import exceptions
+from rest_framework import authentication
 
 from indy.error import ErrorCode, IndyError
 
 from .indyutils import open_wallet, close_wallet, get_wallet_name
+from .models import IndyWallet
 
 
 class IndyBackend(ModelBackend):
     def authenticate(self, request, username=None, password=None):
         # Check the username/password and return a user.
+        print(" >>> Test auth for", username)
         user = super(IndyBackend, self).authenticate(request, username, password)
         if user:
             print(" >>> Authenticated", username, user)
@@ -29,6 +37,7 @@ class IndyBackend(ModelBackend):
         return user
 
     def get_user(self, user_id):
+        print(" >>> Fetch user for", user_id)
         user = super(IndyBackend, self).get_user(user_id)
         if user:
             print(" >>> Fetched", user_id, user)
@@ -36,6 +45,40 @@ class IndyBackend(ModelBackend):
             print(" >>> Not fetched", user_id)
         return user
 
+
+class IndyRestAuthentication(BasicAuthentication):
+
+    def authenticate(self, request):
+        try:
+            # Check for valid basic auth header
+            if 'HTTP_AUTHORIZATION' in request.META:
+                (authmeth, auth) = request.META['HTTP_AUTHORIZATION'].split(' ',1)
+                if authmeth.lower() == "basic":
+                    print(auth)
+                    auth = base64.b64decode(auth).decode('utf-8')
+                    (username, password) = auth.split(':',1)
+                    print(username, password)
+                    wallet = wallet_authenticate(username=username, password=password)
+                    if wallet is not None:
+                        user = get_user_model()(wallet_name=wallet, is_active=True)
+                        request.user = user
+                        return (user, None)  # authentication successful
+        except:
+            # if we get any exceptions, treat as auth failure
+            pass
+
+        raise exceptions.AuthenticationFailed('No credentials provided.')
+
+
+def wallet_authenticate(username, password):
+    # open wallet to validate password
+    wallet = IndyWallet.objects.filter(wallet_name=username).first()
+    if wallet is not None:
+        # this will throw an exception if it fails
+        wallet_handle = open_wallet(username, password)
+        close_wallet(wallet_handle)
+
+    return wallet
 
 
 def indy_wallet_logout(sender, user, request, **kwargs):

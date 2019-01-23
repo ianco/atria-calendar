@@ -1,9 +1,10 @@
 from django.http import HttpResponseBadRequest, HttpResponseRedirect
 from django.shortcuts import render, redirect
 from django.utils import timezone, translation
-from django.contrib.auth import login, authenticate
-from django.views.generic.edit import UpdateView
+from django.contrib.auth import authenticate, get_user_model, login
+from django.views.generic.edit import CreateView, UpdateView
 from django.views.generic.list import ListView
+from django.urls import reverse
 
 from swingtime import forms as swingtime_forms
 from swingtime import views as swingtime_views
@@ -41,7 +42,7 @@ class TranslatedFormMixin(object):
             translation.activate(query_language)
 
     def wrap(self, method, *args, **kwargs):
-        # Changes the language, calls the wrapped method, then reverts language.
+        # Changes the language, calls the wrapped method, then reverts language
         self.set_language()
 
         return_value = method(*args, **kwargs)
@@ -63,7 +64,12 @@ class TranslatedFormMixin(object):
 # Wrappers around swingtme views:
 ####################################################################
 
-def atria_year_view(request, year, template='swingtime/yearly_view.html', queryset=None):
+def atria_year_view(
+    request,
+    year,
+    template='swingtime/yearly_view.html',
+    queryset=None
+):
     '''
 
     Context parameters:
@@ -120,12 +126,20 @@ def atria_month_view(
     return swingtime_views.month_view(request, year, month, template, queryset)
 
 
-def atria_day_view(request, year, month, day, template='swingtime/daily_view.html', **params):
+def atria_day_view(
+    request,
+    year,
+    month,
+    day,
+    template='swingtime/daily_view.html',
+    **params
+):
     '''
     See documentation for function``_datetime_view``.
 
     '''
-    return swingtime_views.day_view(request, year, month, day, template, **params)
+    return swingtime_views.day_view(request, year, month, day, template,
+                                    **params)
 
 
 def atria_occurrence_view(
@@ -146,7 +160,8 @@ def atria_occurrence_view(
     ``form``
         a form object for updating the occurrence
     '''
-    return swingtime_views.occurrence_view(request, event_pk, pk, template, form_class)
+    return swingtime_views.occurrence_view(request, event_pk, pk, template,
+                                           form_class)
 
 
 def add_atria_event(
@@ -161,8 +176,8 @@ def add_atria_event(
     Context parameters:
 
     ``dtstart``
-        a datetime.datetime object representing the GET request value if present,
-        otherwise None
+        a datetime.datetime object representing the GET request value if
+        present, otherwise None
 
     ``event_form``
         a form object for updating the event
@@ -171,16 +186,24 @@ def add_atria_event(
         a form object for adding occurrences
 
     '''
-    return swingtime_views.add_event(request, template, event_form_class, recurrence_form_class)
+    return swingtime_views.add_event(request, template, event_form_class,
+                                     recurrence_form_class)
 
 
 ####################################################################
 # Atria custom views:
 ####################################################################
 
-#def login(request):
-#    """Shell login view."""
-#    return render(request, 'atriacalendar/login.html')
+
+class SignupView(CreateView):
+    # form_class = SignUpForm
+    form_class = SignUpForm
+    model = get_user_model()
+    template_name = 'registration/signup.html'
+
+    def get_success_url(self):
+        return reverse('calendar_home')
+
 
 def signup_view(request):
     if request.method == 'POST':
@@ -218,11 +241,13 @@ def signup_view(request):
         form = SignUpForm()
     return render(request, 'registration/signup.html', {'form': form})
 
+
 def calendar_home(request):
     """Home page shell view."""
 
     return render(request, 'atriacalendar/calendar_home.html',
                   context={'active_view': 'calendar_home'})
+
 
 def calendar_view(request, *args, **kwargs):
     """Whole Calendar shell view."""
@@ -231,7 +256,9 @@ def calendar_view(request, *args, **kwargs):
     the_month = kwargs['month']
 
     return render(request, 'atriacalendar/calendar_view.html',
-                  context={'active_view': 'calendar_view', 'year': the_year, 'month': the_month})
+                  context={'active_view': 'calendar_view', 'year': the_year,
+                           'month': the_month})
+
 
 def create_event(request):
     """Create Calendar Event shell view."""
@@ -239,10 +266,12 @@ def create_event(request):
     return render(request, 'atriacalendar/create_event.html',
                   context={'active_view': 'create_event'})
 
+
 def add_participants(request):
     """Second step of Event creation, adding participants. Shell view."""
 
     return render(request, 'atriacalendar/add_participants.html')
+
 
 def event_list(request):
     """List/Manage Calendar Events shell view."""
@@ -250,10 +279,12 @@ def event_list(request):
     return render(request, 'atriacalendar/event_list.html',
                   context={'active_view': 'calendar_list'})
 
+
 def event_detail(request):
     """Shell view for viewing/editing a single Event."""
 
     return render(request, 'atriacalendar/event_detail.html')
+
 
 def event_view(request, pk):
     lang = request.GET.get('event_lang')
@@ -263,6 +294,7 @@ def event_view(request, pk):
 
     return swingtime_views.event_view(request, pk, event_form_class=EventForm,
                                       recurrence_form_class=EventForm)
+
 
 class EventListView(ListView):
     """
@@ -274,9 +306,11 @@ class EventListView(ListView):
 
     def get_queryset(self):
         if 'event_type' in self.kwargs and self.kwargs['event_type']:
-            return AtriaEvent.objects.filter(event_type=self.kwargs['event_type'])
+            return AtriaEvent.objects.filter(
+                event_type=self.kwargs['event_type'])
         else:
             return AtriaEvent.objects.all()
+
 
 class EventUpdateView(TranslatedFormMixin, UpdateView):
     """

@@ -11,6 +11,8 @@ from indy.error import ErrorCode, IndyError
 
 from .indyutils import open_wallet, close_wallet, get_wallet_name
 from .models import IndyWallet
+from atriacalendar.models import UserSession
+from .tasks import demo_task
 
 
 class IndyBackend(ModelBackend):
@@ -27,6 +29,9 @@ class IndyBackend(ModelBackend):
                     request.session['user_wallet_handle'] = wallet_handle
                     request.session['user_wallet_owner'] = user.email
                     request.session['wallet_name'] = user.wallet_name.wallet_name
+
+                    #user_wallet_logged_in_handler(request, user, user.wallet_name.wallet_name)
+
                     print(" >>> Opened wallet for", username, wallet_handle)
                 except IndyError:
                     # ignore errors for now
@@ -88,6 +93,7 @@ def indy_wallet_logout(sender, user, request, **kwargs):
             wallet_handle = request.session[wallet_type]
             try:
                 close_wallet(wallet_handle)
+                user_wallet_logged_out_handler(request, user)
                 print(" >>> Closed wallet for", wallet_type, wallet_handle)
             except IndyError:
                 # ignore errors for now
@@ -100,6 +106,38 @@ def indy_wallet_logout(sender, user, request, **kwargs):
                 if 'wallet_name' in request.session:
                     del request.session['wallet_name']
 
-user_logged_out.connect(indy_wallet_logout)
+
+def user_wallet_logged_in_handler(request, user, wallet_name):
+    print("Login wallet, {} {} {}".format(user.email, request.session.session_key, wallet_name))
+    (session, session_created) = UserSession.objects.get_or_create(user=user, session_id=request.session.session_key)
+    session.wallet_name = wallet_name
+    session.save()
+
+def user_wallet_logged_out_handler(request, user):
+    print("Logout wallet, {} {}".format(user.email, request.session.session_key))
+    session = UserSession.objects.get(user=user, session_id=request.session.session_key)
+    session.wallet_name = None
+    session.save()
+
+def user_logged_in_handler(sender, request, user, **kwargs):
+    if 'wallet_name' in request.session:
+        wallet_name = request.session['wallet_name']
+    else:
+        wallet_name = None
+    print("Login user {} {} {}".format(user.email, request.session.session_key, wallet_name))
+    (session, session_created) = UserSession.objects.get_or_create(user=user, session_id=request.session.session_key, wallet_name=wallet_name)
+    demo_task("message", user.id, request.session.session_key, repeat=25)
+
+
+def user_logged_out_handler(sender, user, request, **kwargs):
+    print("Logout user {} {}".format(user.email, request.session.session_key))
+    indy_wallet_logout(sender, user, request, **kwargs)
+    UserSession.objects.get(user=user, session_id=request.session.session_key).delete()
+
+
+user_logged_in.connect(user_logged_in_handler)
+
+user_logged_out.connect(user_logged_out_handler)
+
 
 

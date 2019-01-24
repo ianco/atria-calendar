@@ -1,5 +1,7 @@
+from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import Group, PermissionsMixin
+from django.contrib.sessions.models import Session
 from django.db import models
 from django.utils import timezone
 
@@ -12,6 +14,12 @@ USER_ROLES = (
     'Volunteer',
     'Attendee',
 )
+
+
+class UserSession(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    session = models.ForeignKey(Session, on_delete=models.CASCADE)
+    wallet_name = models.CharField(max_length=30, blank=True, null=True)
 
 
 class UserManager(BaseUserManager):
@@ -67,7 +75,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_login = models.DateTimeField(blank=True, null=True)
     #wallet_name = models.CharField(max_length=30, blank=True)
     wallet_name = models.ForeignKey('indyconfig.IndyWallet', to_field="wallet_name", blank = True, null=True, on_delete=models.CASCADE)
-    vcx_config = models.TextField(max_length=4000, blank=True)
 
     EMAIL_FIELD = 'email'
     USERNAME_FIELD = 'email'
@@ -131,7 +138,6 @@ class AtriaOrganization(models.Model):
     password = models.CharField(max_length=12)
     #wallet_name = models.CharField(max_length=30, blank=True)
     wallet_name = models.ForeignKey('indyconfig.IndyWallet', to_field="wallet_name", blank = True, null=True, on_delete=models.CASCADE)
-    vcx_config = models.TextField(max_length=4000, blank=True)
 
     def __str__(self):
         return self.org_name + ", " +  self.status

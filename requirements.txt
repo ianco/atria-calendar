@@ -11,3 +11,4 @@ pydotplus
 djangorestframework
 markdown
 django-filter
+django-background-tasks

@@ -34,9 +34,10 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'background_task',
+    'rest_framework',
     'swingtime',
     'atriacalendar',
-    'rest_framework',
 ]
 
 def file_ext():
@@ -77,6 +78,11 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
     ),
 }
+
+BACKGROUND_TASK_RUN_ASYNC = False
+BACKGROUND_TASK_ASYNC_THREADS = 1
+MAX_ATTEMPTS = 1
+#MAX_RUN_TIME = 120
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

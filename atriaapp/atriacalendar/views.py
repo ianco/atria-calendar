@@ -13,7 +13,7 @@ import asyncio
 import json
 
 from indyconfig.indyutils import create_wallet, open_wallet, get_wallet_name, initialize_and_provision_vcx, send_connection_invitation, send_connection_confirmation, check_connection_status
-from indyconfig.indyauth import indy_wallet_logout
+from indyconfig.indyauth import indy_wallet_logout, user_wallet_logged_in_handler, user_wallet_logged_out_handler
 from indy.error import ErrorCode, IndyError
 
 from django.conf import settings
@@ -229,8 +229,8 @@ def signup_view(request):
 
             # provision VCX for this Org/Wallet
             config = initialize_and_provision_vcx(wallet_name, raw_password, username)
-            user.vcx_config = config
-            user.save()
+            wallet.vcx_config = config
+            wallet.save()
             print(" >>> created wallet", wallet_name)
 
             # need to auto-login with Atria custom user
@@ -356,7 +356,7 @@ def handle_wallet_login(request):
     if request.method=='POST':
         form = WalletLoginForm(request.POST)
         if form.is_valid():
-            indy_wallet_logout(None, None, request)
+            indy_wallet_logout(None, request.user, request)
     
             cd = form.cleaned_data
 
@@ -382,6 +382,8 @@ def handle_wallet_login(request):
                     request.session['org_wallet_owner'] = related_org[0].org_name
                 request.session['wallet_name'] = wallet_name
 
+                user_wallet_logged_in_handler(request, request.user, wallet_name)
+
                 print(" >>> Opened wallet for", wallet_name, wallet_handle)
                 return render(request, 'indy/form_response.html', {'msg': 'Opened wallet for ' + wallet_name})
             except IndyError:
@@ -395,7 +397,7 @@ def handle_wallet_login(request):
     return render(request, 'indy/wallet_login.html', {'form': form})
 
 def handle_wallet_logout(request):
-    indy_wallet_logout(None, None, request)
+    indy_wallet_logout(None, request.user, request)
     return render(request, 'indy/form_response.html', {'msg': 'Logged out of wallet(s)'})
 
 def handle_connection_request(request):
@@ -403,7 +405,7 @@ def handle_connection_request(request):
         form = SendConnectionInvitationForm(request.POST)
         if form.is_valid():
             # log out of current wallet, if any
-            indy_wallet_logout(None, None, request)
+            indy_wallet_logout(None, request.user, request)
     
             cd = form.cleaned_data
 
@@ -420,10 +422,10 @@ def handle_connection_request(request):
             wallet = indy_models.IndyWallet.objects.filter(wallet_name=wallet_name).first()
 
             if 0 < len(related_user):
-                vcx_config = related_user[0].vcx_config
+                vcx_config = wallet.vcx_config
                 my_name = related_user[0].email
             elif 0 < len(related_org):
-                vcx_config = related_org[0].vcx_config
+                vcx_config = wallet.vcx_config
                 my_name = related_org[0].org_name
 
             # get user or org associated with target partner
@@ -477,7 +479,7 @@ def handle_connection_response(request):
         form = SendConnectionResponseForm(request.POST)
         if form.is_valid():
             # log out of current wallet, if any
-            indy_wallet_logout(None, None, request)
+            indy_wallet_logout(None, request.user, request)
     
             cd = form.cleaned_data
 
@@ -493,12 +495,13 @@ def handle_connection_response(request):
             related_org = AtriaOrganization.objects.filter(wallet_name=wallet_name).all()
             if len(related_user) == 0 and len(related_org) == 0:
                 raise Exception('Error wallet with no owner {}'.format(wallet_name))
+            wallet = indy_models.IndyWallet.objects.filter(wallet_name=wallet_name).first()
 
             if 0 < len(related_user):
-                vcx_config = related_user[0].vcx_config
+                vcx_config = wallet.vcx_config
                 my_name = related_user[0].email
             elif 0 < len(related_org):
-                vcx_config = related_org[0].vcx_config
+                vcx_config = wallet.vcx_config
                 my_name = related_org[0].org_name
 
             # set wallet password
@@ -539,7 +542,7 @@ def poll_connection_status(request):
         form = PollConnectionStatusForm(request.POST)
         if form.is_valid():
             # log out of current wallet, if any
-            indy_wallet_logout(None, None, request)
+            indy_wallet_logout(None, request.user, request)
     
             cd = form.cleaned_data
 
@@ -553,11 +556,12 @@ def poll_connection_status(request):
             related_org = AtriaOrganization.objects.filter(wallet_name=wallet_name).all()
             if len(related_user) == 0 and len(related_org) == 0:
                 raise Exception('Error wallet with no owner {}'.format(wallet_name))
+            wallet = indy_models.IndyWallet.objects.filter(wallet_name=wallet_name).first()
 
             if 0 < len(related_user):
-                vcx_config = related_user[0].vcx_config
+                vcx_config = wallet.vcx_config
             elif 0 < len(related_org):
-                vcx_config = related_org[0].vcx_config
+                vcx_config = wallet.vcx_config
 
             # set wallet password
             # TODO vcx_config['something'] = raw_password

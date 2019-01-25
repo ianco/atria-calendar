@@ -19,6 +19,26 @@ class IndyWallet(models.Model):
         return self.wallet_name
 
 
+# reference to a schema on the ledger
+class IndySchema(models.Model):
+    ledger_schema_id = models.CharField(max_length=40, unique=True)
+    schema_name = models.CharField(max_length=40)
+    schema_version = models.CharField(max_length=40)
+    schema = models.TextField(max_length=4000)
+    schema_data = models.TextField(max_length=4000)
+
+
+# reference to a credential definition on the ledger
+class IndyCredentialDefinition(models.Model):
+    ledger_creddef_id = models.CharField(max_length=40, unique=True)
+    ledger_schema = models.ForeignKey(IndySchema, on_delete=models.CASCADE)
+    wallet_name = models.ForeignKey(IndyWallet, to_field="wallet_name", on_delete=models.CASCADE)
+    creddef_name = models.CharField(max_length=40)
+    creddef_handle = models.CharField(max_length=40)
+    creddef_template = models.TextField(max_length=4000)
+    creddef_data = models.TextField(max_length=4000)
+
+
 # base class for vcx connections
 class VcxConnection(models.Model):
     wallet_name = models.ForeignKey(IndyWallet, to_field="wallet_name", on_delete=models.CASCADE)

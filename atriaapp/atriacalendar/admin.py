@@ -1,7 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+import json
 
-from indyconfig.indyutils import create_wallet, delete_wallet, get_org_wallet_name, initialize_and_provision_vcx
+from indyconfig.indyutils import create_wallet, delete_wallet, get_org_wallet_name, initialize_and_provision_vcx, create_schema_and_creddef
 
 from .models import *
 from indyconfig import models as indy_models
@@ -56,6 +57,10 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
             config = initialize_and_provision_vcx(wallet_name, raw_password, org_name)
             wallet.vcx_config = config
             wallet.save()
+
+            # TODO temporary measure - create a schema and cred def and register on the ledger
+            (schema, creddef) = create_schema_and_creddef(wallet, json.loads(config), 'schema_' + wallet_name, 'creddef_' + wallet_name)
+
             super().save_model(request, obj, form, True)
             print(" >>> created wallet", wallet_name)
 

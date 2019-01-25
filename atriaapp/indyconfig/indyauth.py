@@ -10,9 +10,8 @@ from rest_framework import authentication
 from indy.error import ErrorCode, IndyError
 
 from .indyutils import open_wallet, close_wallet, get_wallet_name
-from .models import IndyWallet
-from atriacalendar.models import UserSession
-from .tasks import demo_task
+from .models import IndyWallet, IndySession
+from .tasks import vcx_agent_background_task
 
 
 class IndyBackend(ModelBackend):
@@ -109,13 +108,13 @@ def indy_wallet_logout(sender, user, request, **kwargs):
 
 def user_wallet_logged_in_handler(request, user, wallet_name):
     print("Login wallet, {} {} {}".format(user.email, request.session.session_key, wallet_name))
-    (session, session_created) = UserSession.objects.get_or_create(user=user, session_id=request.session.session_key)
+    (session, session_created) = IndySession.objects.get_or_create(user=user, session_id=request.session.session_key)
     session.wallet_name = wallet_name
     session.save()
 
 def user_wallet_logged_out_handler(request, user):
     print("Logout wallet, {} {}".format(user.email, request.session.session_key))
-    session = UserSession.objects.get(user=user, session_id=request.session.session_key)
+    session = IndySession.objects.get(user=user, session_id=request.session.session_key)
     session.wallet_name = None
     session.save()
 
@@ -125,14 +124,14 @@ def user_logged_in_handler(sender, request, user, **kwargs):
     else:
         wallet_name = None
     print("Login user {} {} {}".format(user.email, request.session.session_key, wallet_name))
-    (session, session_created) = UserSession.objects.get_or_create(user=user, session_id=request.session.session_key, wallet_name=wallet_name)
-    demo_task("message", user.id, request.session.session_key, repeat=25)
+    (session, session_created) = IndySession.objects.get_or_create(user=user, session_id=request.session.session_key, wallet_name=wallet_name)
+    vcx_agent_background_task("Started by user login", user.id, request.session.session_key, repeat=30)
 
 
 def user_logged_out_handler(sender, user, request, **kwargs):
     print("Logout user {} {}".format(user.email, request.session.session_key))
     indy_wallet_logout(sender, user, request, **kwargs)
-    UserSession.objects.get(user=user, session_id=request.session.session_key).delete()
+    IndySession.objects.get(user=user, session_id=request.session.session_key).delete()
 
 
 user_logged_in.connect(user_logged_in_handler)

@@ -1,7 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import Group, PermissionsMixin
-from django.contrib.sessions.models import Session
 from django.db import models
 from django.utils import timezone
 
@@ -14,12 +13,6 @@ USER_ROLES = (
     'Volunteer',
     'Attendee',
 )
-
-
-class UserSession(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    session = models.ForeignKey(Session, on_delete=models.CASCADE)
-    wallet_name = models.CharField(max_length=30, blank=True, null=True)
 
 
 class UserManager(BaseUserManager):

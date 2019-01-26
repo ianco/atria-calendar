@@ -48,7 +48,7 @@ class VcxConnection(models.Model):
     connection_data = models.TextField(max_length=4000, blank=True)
 
     def __str__(self):
-        return self.wallet_name + ":" + self.partner_name + ", " +  self.status
+        return self.wallet_name.wallet_name + ":" + self.partner_name + ", " +  self.status
 
 
 # base class for vcx conversations - issue/receive credential and request/provide proof
@@ -61,5 +61,5 @@ class VcxConversation(models.Model):
     conversation_data = models.TextField(max_length=4000, blank=True)
 
     def __str__(self):
-        return self.wallet_name + ":" + self.partner_name + ":" + self.message_id + ", " +  self.conversation_type + " " + self.status
+        return self.wallet_name.wallet_name + ":" + self.connection_partner_name + ":" + self.message_id + ", " +  self.conversation_type + " " + self.status
 

@@ -5,8 +5,8 @@ from indy.error import ErrorCode, IndyError
 
 from atriacalendar.models import User
 
-from .models import IndySession, IndyWallet, VcxConnection
-from .indyutils import check_connection_status
+from .models import IndySession, IndyWallet, VcxConnection, VcxConversation
+from .indyutils import check_connection_status, handle_inbound_messages, poll_message_conversations
 
 
 @background(schedule=5)
@@ -41,8 +41,12 @@ def vcx_agent_background_task(message, user_id, session_key, org_id=None):
                 print(" >>> Failed to update connection request for", session.wallet_name, connection.id, connection.partner_name)
                 raise e
 
-        # TODO check for outstanding, un-received messages - add to outstanding conversations
+        # check for outstanding connections and poll status
+        connections = VcxConnection.objects.filter(wallet_name=wallet, status='Active').all()
+        for connection in connections:
+            # check for outstanding, un-received messages - add to outstanding conversations
+            msg_count = handle_inbound_messages(wallet, json.loads(wallet.vcx_config), connection)
 
-        # TODO check status of any in-flight conversations (send/receive credential or request/provide proof)
-
+            # TODO check status of any in-flight conversations (send/receive credential or request/provide proof)
+            polled_count = poll_message_conversations(wallet, json.loads(wallet.vcx_config), connection)
 

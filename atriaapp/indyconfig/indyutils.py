@@ -11,9 +11,13 @@ from indy import anoncreds, crypto, did, ledger, pool, wallet
 from indy.error import ErrorCode, IndyError
 
 from vcx.api.connection import Connection
-from vcx.state import State, ProofState
-from vcx.api.credential_def import CredentialDef
 from vcx.api.schema import Schema
+from vcx.api.credential_def import CredentialDef
+from vcx.api.credential import Credential
+from vcx.state import State, ProofState
+from vcx.api.disclosed_proof import DisclosedProof
+from vcx.api.issuer_credential import IssuerCredential
+from vcx.api.proof import Proof
 from vcx.api.utils import vcx_agent_provision
 from vcx.api.vcx_init import vcx_init_with_config
 from vcx.common import shutdown
@@ -234,6 +238,110 @@ def create_schema_and_creddef(wallet, config, schema_name, creddef_name):
     print(" >>> Done!!!")
 
     return (indy_schema, indy_creddef)
+
+
+def handle_inbound_messages(my_wallet, config, my_connection):
+    print(" >>> Initialize libvcx with configuration")
+    try:
+        config_json = json.dumps(config)
+        run_coroutine_with_args(vcx_init_with_config, config_json)
+    except:
+        raise
+
+    try:
+        handled_count = 0
+        connection_data = json.loads(my_connection.connection_data)
+        connection_to_ = run_coroutine_with_args(Connection.deserialize, connection_data)
+
+        print("Check for and receive offers")
+        offers = run_coroutine_with_args(Credential.get_offers, connection_to_)
+        for offer in offers:
+            already_handled = VcxConversation.objects.filter(message_id=offer[0]['msg_ref_id']).all()
+            if len(already_handled) == 0:
+                save_offer = offer[0].copy()
+                offer_data = json.dumps(save_offer)
+                new_offer = VcxConversation(
+                                    wallet_name = my_wallet,
+                                    connection_partner_name = my_connection.partner_name,
+                                    conversation_type = "CredentialOffer",
+                                    message_id = save_offer['msg_ref_id'],
+                                    status = 'Pending',
+                                    conversation_data = offer_data
+                                )
+                print("Saving received offer to DB")
+                new_offer.save()
+                handled_count = handled_count + 1
+
+        print("Check for and handle proof requests")
+        requests = run_coroutine_with_args(DisclosedProof.get_requests, connection_to_)
+        for request in requests:
+            already_handled = VcxConversation.objects.filter(message_id=request['msg_ref_id']).all()
+            if len(already_handled) == 0:
+                save_request = request.copy()
+                request_data = json.dumps(save_request)
+                new_request = VcxConversation(
+                                    wallet_name = my_wallet,
+                                    connection_partner_name = my_connection.partner_name,
+                                    conversation_type = "ProofRequest",
+                                    message_id = save_request['msg_ref_id'],
+                                    status = 'Pending',
+                                    conversation_data = request_data
+                                )
+                print("Saving received proof request to DB")
+                new_request.save()
+                handled_count = handled_count + 1
+    except:
+        raise
+
+    print(" >>> Shutdown vcx (for now)")
+    try:
+        shutdown(False)
+    except:
+        raise
+
+    print(" >>> Done!!!")
+
+    return handled_count
+
+
+def poll_message_conversations(my_wallet, config, my_connection):
+    print(" >>> Initialize libvcx with configuration")
+    try:
+        config_json = json.dumps(config)
+        run_coroutine_with_args(vcx_init_with_config, config_json)
+    except:
+        raise
+
+    try:
+        polled_count = 0
+
+        # Any conversations of status 'Sent' are for bot processing ...
+        messages = VcxConversation.objects.filter(wallet_name=my_wallet, connection_partner_name=my_connection.partner_name, status='Sent')
+
+        # TODO the magic goes here ...
+        for message in messages:
+            print(" ... Checking message", message.message_id)
+            # de-serialize message content
+            
+            # handle per message type
+            
+            # save updated conversation status
+
+            polled_count = polled_count + 1
+
+            pass
+    except:
+        raise
+
+    print(" >>> Shutdown vcx (for now)")
+    try:
+        shutdown(False)
+    except:
+        raise
+
+    print(" >>> Done!!!")
+
+    return polled_count
 
 
 def create_wallet(wallet_name, raw_password):

@@ -432,14 +432,17 @@ def handle_connection_request(request):
             target_user = User.objects.filter(email=partner_name).all()
             target_org = AtriaOrganization.objects.filter(org_name=partner_name).all()
 
-            if len(target_user) == 0 and len(target_org) == 0:
-                raise Exception('Error requested partner not found {}'.format(partner_name))
+            #if len(target_user) == 0 and len(target_org) == 0:
+            #    raise Exception('Error requested partner not found {}'.format(partner_name))
 
             if 0 < len(target_user):
                 their_wallet_name = target_user[0].wallet_name
             elif 0 < len(target_org):
                 their_wallet_name = target_org[0].wallet_name
-            their_wallet = indy_models.IndyWallet.objects.filter(wallet_name=their_wallet_name).first()
+            else:
+                their_wallet_name = None
+            if their_wallet_name is not None:
+                their_wallet = indy_models.IndyWallet.objects.filter(wallet_name=their_wallet_name).first()
 
             # set wallet password
             # TODO vcx_config['something'] = raw_password
@@ -455,14 +458,18 @@ def handle_connection_request(request):
                     status = 'Sent')
                 my_connection.save()
 
-                their_connection = indy_models.VcxConnection(
-                    wallet_name = their_wallet,
-                    partner_name = my_name,
-                    invitation = json.dumps(invite_data),
-                    status = 'Pending')
-                their_connection.save()
+                if their_wallet_name is not None:
+                    their_connection = indy_models.VcxConnection(
+                        wallet_name = their_wallet,
+                        partner_name = my_name,
+                        invitation = json.dumps(invite_data),
+                        status = 'Pending')
+                    their_connection.save()
 
                 print(" >>> Created invite for", wallet_name, partner_name)
+
+                handle_wallet_login(request)
+
                 return render(request, 'indy/form_response.html', {'msg': 'Updated connection for ' + wallet_name})
             except IndyError:
                 # ignore errors for now
@@ -470,7 +477,11 @@ def handle_connection_request(request):
                 return render(request, 'indy/form_response.html', {'msg': 'Failed to create request for ' + wallet_name})
 
     else:
-        form = SendConnectionInvitationForm()
+        if 'wallet_name' in request.session:
+            wallet_name = request.session['wallet_name']
+        else:
+            wallet_name = ''
+        form = SendConnectionInvitationForm(initial={'wallet_name': wallet_name})
 
     return render(request, 'indy/connection_request.html', {'form': form})
     
@@ -511,14 +522,26 @@ def handle_connection_response(request):
             try:
                 connection_data = send_connection_confirmation(json.loads(vcx_config), partner_name, json.loads(invitation_details))
 
-                connections = indy_models.VcxConnection.objects.filter(id=connection_id).all()
-                # TODO validate connection id
-                my_connection = connections[0]
-                my_connection.connection_data = json.dumps(connection_data)
-                my_connection.status = 'Active'
-                my_connection.save()
+                if connection_id is not None and 0 < connection_id:
+                    connections = indy_models.VcxConnection.objects.filter(id=connection_id).all()
+                    my_connection = connections[0]
+                    my_connection.connection_data = json.dumps(connection_data)
+                    my_connection.status = 'Active'
+                    my_connection.save()
+                else:
+                    # external party? build a new VCXConnection pointing to whoever sent this
+                    my_connection = indy_models.VcxConnection(
+                        wallet_name = wallet,
+                        partner_name = partner_name,
+                        invitation = invitation_details,
+                        connection_data = json.dumps(connection_data),
+                        status = 'Active')
+                    my_connection.save()
 
                 print(" >>> Updated connection for", wallet_name, partner_name)
+
+                handle_wallet_login(request)
+
                 return render(request, 'indy/form_response.html', {'msg': 'Updated connection for ' + wallet_name})
             except IndyError:
                 # ignore errors for now
@@ -529,11 +552,17 @@ def handle_connection_response(request):
         # find connection request
         connection_id = request.GET.get('id', None)
         connections = indy_models.VcxConnection.objects.filter(id=connection_id).all()
-        # TODO validate connection id
-        form = SendConnectionResponseForm(initial={ 'connection_id': connection_id,
-                                                    'wallet_name': connections[0].wallet_name, 
-                                                    'partner_name': connections[0].partner_name, 
-                                                    'invitation_details': connections[0].invitation })
+        if len(connections) > 0:
+            form = SendConnectionResponseForm(initial={ 'connection_id': connection_id,
+                                                        'wallet_name': connections[0].wallet_name, 
+                                                        'partner_name': connections[0].partner_name, 
+                                                        'invitation_details': connections[0].invitation })
+        else:
+            if 'wallet_name' in request.session:
+                wallet_name = request.session['wallet_name']
+            else:
+                wallet_name = ''
+            form = SendConnectionResponseForm(initial={'wallet_name': wallet_name})
 
     return render(request, 'indy/connection_response.html', {'form': form})
     
@@ -583,6 +612,9 @@ def poll_connection_status(request):
                 my_connection.save()
 
                 print(" >>> Updated connection for", wallet_name)
+
+                handle_wallet_login(request)
+
                 return render(request, 'indy/form_response.html', {'msg': 'Updated connection for ' + wallet_name})
             except IndyError:
                 # ignore errors for now
@@ -608,7 +640,27 @@ def list_connections(request):
 
     return render(request, 'indy/list_connections.html', {'wallet_name': 'No wallet selected', 'connections': []})
 
+
+def list_conversations(request):
+    # expects a wallet to be opened in the current session
+    if 'wallet_name' in request.session:
+        wallet_name = request.session['wallet_name']
+        conversations = indy_models.VcxConversation.objects.filter(wallet_name=wallet_name).all()
+        return render(request, 'indy/list_conversations.html', {'wallet_name': wallet_name, 'conversations': conversations})
+
+    return render(request, 'indy/list_conversations.html', {'wallet_name': 'No wallet selected', 'conversations': []})
+
+
+def handle_conversation_response(request):
+    return render(request, 'indy/form_response.html', {'msg': 'Not yet implemented'})
+
+
+def poll_conversation_status(request):
+    return render(request, 'indy/form_response.html', {'msg': 'Not yet implemented'})
+
+
 def form_response(request):
     msg = request.GET.get('msg', None)
     return render(request, 'indy/form_response.html', {'msg': msg})
+
 

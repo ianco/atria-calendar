@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% load i18n %}
+
+{% block page_title %} {% trans "List Conversations" %} {% endblock %}
+
+{% block main_content %} 
+
+<p> Wallet: {{ wallet_name }}
+
+  <ul class="conversations">
+    {% for conversation in conversations %}
+      <li>
+        {{ conversation.connection_partner_name }} {{ conversation.conversation_type }} {{ conversation.status }}
+        {% if conversation.status == 'Pending' %}
+            <a href={% url 'conversation_response' %}?id={{conversation.id}}>Respond</a>
+        {% endif %}
+        {% if conversation.status == 'Sent' %}
+            <a href={% url 'check_conversation' %}?id={{conversation.id}}>Check Status</a>
+        {% endif %}
+        {% if conversation.status == 'Active' %}
+            [Completed]
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</p>
+<p>
+  <a href="">{% trans "Send a Credential Offer" %}</a>
+</p>
+<p>
+  <a href="">{% trans "Ask for a Proof" %}</a>
+</p>
+
+{% endblock %}

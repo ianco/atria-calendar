@@ -75,3 +75,8 @@ class SendConnectionResponseForm(SendConnectionInvitationForm):
 class PollConnectionStatusForm(WalletLoginForm):
     connection_id = forms.IntegerField(label="Id")
 
+class SendConversationResponseForm(WalletLoginForm):
+    conversation_id = forms.IntegerField(label="Id")
+
+class PollConversationStatusForm(WalletLoginForm):
+    conversation_id = forms.IntegerField(label="Id")

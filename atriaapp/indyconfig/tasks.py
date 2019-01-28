@@ -1,5 +1,7 @@
 import json
+import datetime
 from background_task import background
+from django.contrib.sessions.models import Session
 
 from indy.error import ErrorCode, IndyError
 
@@ -15,9 +17,14 @@ def vcx_agent_background_task(message, user_id, session_key, org_id=None):
 
     # check if user/wallet has a valid session
     user = User.objects.filter(id=user_id).first()
-    session = IndySession.objects.get(user=user, session_id=session_key)
+    try:
+        session = IndySession.objects.get(user=user, session_id=session_key)
+    except:
+        raise Exception("No Indy Session found for {} {}".format(user.email, session_key))
 
     print("Found session {}  for user {} wallet {}".format(session.id, user.email, session.wallet_name))
+    if session.session.expire_date < datetime.datetime.now():
+        raise Exception("Django Session timed out for {} {}".format(user.email, session.wallet_name))
 
     if session.wallet_name is not None:
         wallet = IndyWallet.objects.get(wallet_name=session.wallet_name)

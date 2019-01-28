@@ -222,7 +222,7 @@ def create_schema_and_creddef(wallet, config, schema_name, creddef_name):
                             creddef_name = creddef_name,
                             creddef_handle = cred_def_handle,
                             creddef_template = json.dumps(creddef_template),
-                            creddef_data = creddef_data
+                            creddef_data = json.dumps(creddef_data)
                             )
         indy_creddef.save()
 
@@ -239,6 +239,41 @@ def create_schema_and_creddef(wallet, config, schema_name, creddef_name):
 
     return (indy_schema, indy_creddef)
 
+
+def send_credential_offer(wallet, config, connection_data, partner_name, credential_tag, schema_attrs, cred_def, credential_name):
+    print(" >>> Initialize libvcx with new configuration for a cred offer to", partner_name)
+    try:
+        config_json = json.dumps(config)
+        run_coroutine_with_args(vcx_init_with_config, config_json)
+    except:
+        raise
+
+    # create connection and generate invitation
+    try:
+        my_connection = run_coroutine_with_args(Connection.deserialize, connection_data)
+        my_cred_def = run_coroutine_with_args(CredentialDef.deserialize, json.loads(cred_def.creddef_data))
+        cred_def_handle = my_cred_def.handle
+
+        # create a credential (the last '0' is the 'price')
+        credential = run_coroutine_with_args(IssuerCredential.create, credential_tag, json.loads(schema_attrs), int(cred_def_handle), credential_name, '0')
+
+        print("Issue credential offer to", partner_name)
+        run_coroutine_with_args(credential.send_offer, my_connection)
+
+        # serialize/deserialize credential - waiting for Alice to rspond with Credential Request
+        credential_data = run_coroutine(credential.serialize)
+    except:
+        raise
+
+    print(" >>> Shutdown vcx (for now)")
+    try:
+        shutdown(False)
+    except:
+        raise
+
+    print(" >>> Done!!!")
+    return credential_data
+    
 
 def handle_inbound_messages(my_wallet, config, my_connection):
     print(" >>> Initialize libvcx with configuration")

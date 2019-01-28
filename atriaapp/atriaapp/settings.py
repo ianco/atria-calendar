@@ -100,6 +100,8 @@ AUTHENTICATION_BACKENDS = ['indyconfig.indyauth.IndyBackend']
 
 ROOT_URLCONF = 'atriaapp.urls'
 
+SESSION_COOKIE_AGE = 1800
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',

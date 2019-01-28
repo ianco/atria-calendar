@@ -6,6 +6,7 @@ from swingtime import models as swingtime_models
 from swingtime import forms as swingtime_forms
 
 from .models import *
+import indyconfig.models as indy_models
 
 
 # class EventForm(TranslationModelForm):
@@ -80,3 +81,14 @@ class SendConversationResponseForm(WalletLoginForm):
 
 class PollConversationStatusForm(WalletLoginForm):
     conversation_id = forms.IntegerField(label="Id")
+
+class SendCredentialOfferForm(WalletLoginForm):
+    connection_id = forms.IntegerField(label="Connection Id")
+    credential_tag = forms.CharField(label='Credential Tag', max_length=40)
+    cred_def = forms.ModelChoiceField(label='Cred Def', queryset=indy_models.IndyCredentialDefinition.objects.all().order_by('wallet_name'))
+    schema_attrs = forms.CharField(label='Credential Attrs', max_length=4000, widget=forms.Textarea)
+    credential_name = forms.CharField(label='Credential Name', max_length=40)
+
+class SendCredentialResponseForm(SendConversationResponseForm):
+    credential_tag = forms.CharField(label='Credential Tag', max_length=40)
+

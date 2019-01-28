@@ -27,6 +27,9 @@ class IndySchema(models.Model):
     schema = models.TextField(max_length=4000)
     schema_data = models.TextField(max_length=4000)
 
+    def __str__(self):
+        return self.schema_name
+
 
 # reference to a credential definition on the ledger
 class IndyCredentialDefinition(models.Model):
@@ -37,6 +40,9 @@ class IndyCredentialDefinition(models.Model):
     creddef_handle = models.CharField(max_length=40)
     creddef_template = models.TextField(max_length=4000)
     creddef_data = models.TextField(max_length=4000)
+
+    def __str__(self):
+        return self.ledger_schema.schema_name + ":" + self.wallet_name.wallet_name + ":" + self.creddef_name
 
 
 # base class for vcx connections

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% load i18n %}
+
+{% block page_title %} {% trans "Send Credential Request" %} {% endblock %}
+
+{% block main_content %} 
+
+<form action="{% url 'conversation_response' %}" method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Submit</button>
+</form>
+
+{% endblock %}

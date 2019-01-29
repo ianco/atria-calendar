@@ -12,7 +12,7 @@ from swingtime import views as swingtime_views
 import asyncio
 import json
 
-from indyconfig.indyutils import create_wallet, open_wallet, get_wallet_name, initialize_and_provision_vcx, send_connection_invitation, send_connection_confirmation, check_connection_status, send_credential_offer
+from indyconfig.indyutils import create_wallet, open_wallet, get_wallet_name, initialize_and_provision_vcx, send_connection_invitation, send_connection_confirmation, check_connection_status, send_credential_offer, send_credential_request
 from indyconfig.indyauth import indy_wallet_logout, user_wallet_logged_in_handler, user_wallet_logged_out_handler
 from indy.error import ErrorCode, IndyError
 
@@ -651,10 +651,6 @@ def list_conversations(request):
     return render(request, 'indy/list_conversations.html', {'wallet_name': 'No wallet selected', 'conversations': []})
 
 
-def handle_conversation_response(request):
-    return render(request, 'indy/form_response.html', {'msg': 'Not yet implemented'})
-
-
 def handle_credential_offer(request):
     if request.method=='POST':
         form = SendCredentialOfferForm(request.POST)
@@ -692,13 +688,10 @@ def handle_credential_offer(request):
             my_connection = connections[0]
             connection_data = my_connection.connection_data
 
-            # TODO do we need to search?  Or does the form give us the cred def model?
-            #cred_defs = indy_models.IndyCredentialDefinition.objects.filter()
-
             # set wallet password
             # TODO vcx_config['something'] = raw_password
 
-            # build the credential request and send
+            # build the credential offer and send
             try:
                 credential_data = send_credential_offer(wallet, json.loads(vcx_config), json.loads(connection_data), my_connection.partner_name, credential_tag, schema_attrs, cred_def, credential_name)
 
@@ -736,6 +729,84 @@ def handle_credential_offer(request):
                                                  'schema_attrs': json.dumps(schema_attrs) })
 
     return render(request, 'indy/credential_offer.html', {'form': form})
+
+
+def handle_conversation_response(request):
+    if request.method=='POST':
+        form = SendCredentialResponseForm(request.POST)
+        if form.is_valid():
+            # log out of current wallet, if any
+            indy_wallet_logout(None, request.user, request)
+    
+            cd = form.cleaned_data
+
+            wallet_name = cd.get('wallet_name')
+            raw_password = cd.get('raw_password')
+            conversation_id = cd.get('conversation_id')
+
+            # get user or org associated with this wallet
+            related_user = User.objects.filter(wallet_name=wallet_name).all()
+            related_org = AtriaOrganization.objects.filter(wallet_name=wallet_name).all()
+            if len(related_user) == 0 and len(related_org) == 0:
+                raise Exception('Error wallet with no owner {}'.format(wallet_name))
+            wallet = indy_models.IndyWallet.objects.filter(wallet_name=wallet_name).first()
+
+            if 0 < len(related_user):
+                vcx_config = wallet.vcx_config
+                my_name = related_user[0].email
+            elif 0 < len(related_org):
+                vcx_config = wallet.vcx_config
+                my_name = related_org[0].org_name
+
+            # find conversation request
+            conversations = indy_models.VcxConversation.objects.filter(id=conversation_id).all()
+            # TODO validate conversation id
+            my_conversation = conversations[0]
+            indy_conversation = json.loads(my_conversation.conversation_data)
+            connections = indy_models.VcxConnection.objects.filter(wallet_name=my_conversation.wallet_name, partner_name=my_conversation.connection_partner_name).all()
+            # TODO validate connection id
+            my_connection = connections[0]
+
+            # build the credential request and send
+            try:
+                credential_data = send_credential_request(wallet, json.loads(vcx_config), json.loads(my_connection.connection_data), my_connection.partner_name, my_conversation)
+
+                my_conversation.status = 'Sent'
+                my_conversation.conversation_data = credential_data
+                my_conversation.conversation_type = 'CredentialRequest'
+                my_conversation.save()
+
+                print(" >>> Updated conversation for", wallet_name, )
+
+                handle_wallet_login(request)
+
+                return render(request, 'indy/form_response.html', {'msg': 'Updated conversation for ' + wallet_name})
+            except IndyError:
+                # ignore errors for now
+                print(" >>> Failed to update conversation for", wallet_name)
+                return render(request, 'indy/form_response.html', {'msg': 'Failed to update conversation for ' + wallet_name})
+
+    else:
+        # find conversation request, fill in form details
+        conversation_id = request.GET.get('conversation_id', None)
+        conversations = indy_models.VcxConversation.objects.filter(id=conversation_id).all()
+        # TODO validate conversation id
+        conversation = conversations[0]
+        indy_conversation = json.loads(conversation.conversation_data)
+        connections = indy_models.VcxConnection.objects.filter(wallet_name=conversation.wallet_name, partner_name=conversation.connection_partner_name).all()
+        # TODO validate connection id
+        connection = connections[0]
+        form = SendCredentialResponseForm(initial={ 
+                                                 'conversation_id': conversation_id,
+                                                 'wallet_name': connection.wallet_name,
+                                                 'from_partner_name': connection.partner_name,
+                                                 'claim_id':indy_conversation['claim_id'],
+                                                 'claim_name': indy_conversation['claim_name'],
+                                                 'credential_attrs': indy_conversation['credential_attrs'],
+                                                 'libindy_offer_schema_id': json.loads(indy_conversation['libindy_offer'])['schema_id']
+                                                })
+
+    return render(request, 'indy/conversation_response.html', {'form': form})
 
 
 def poll_conversation_status(request):

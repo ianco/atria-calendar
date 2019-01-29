@@ -275,6 +275,41 @@ def send_credential_offer(wallet, config, connection_data, partner_name, credent
     return credential_data
     
 
+def send_credential_request(wallet, config, connection_data, partner_name, my_conversation):
+    print(" >>> Initialize libvcx with new configuration for a cred offer to", partner_name)
+    try:
+        config_json = json.dumps(config)
+        run_coroutine_with_args(vcx_init_with_config, config_json)
+    except:
+        raise
+
+    # create connection and generate invitation
+    try:
+        my_connection = run_coroutine_with_args(Connection.deserialize, connection_data)
+        #my_offer = run_coroutine_with_args()
+    
+        print("Create a credential object from the credential offer")
+        offer_json = [json.loads(my_conversation.conversation_data),]
+        credential = run_coroutine_with_args(Credential.create, 'credential', offer_json)
+
+        print("After receiving credential offer, send credential request")
+        run_coroutine_with_args(credential.send_request, my_connection, 0)
+
+        # serialize/deserialize credential - wait for Faber to send credential
+        credential_data = run_coroutine(credential.serialize)
+    except:
+        raise
+
+    print(" >>> Shutdown vcx (for now)")
+    try:
+        shutdown(False)
+    except:
+        raise
+
+    print(" >>> Done!!!")
+    return credential_data
+
+
 def handle_inbound_messages(my_wallet, config, my_connection):
     print(" >>> Initialize libvcx with configuration")
     try:

@@ -13,10 +13,10 @@
       <li>
         {{ conversation.connection_partner_name }} {{ conversation.conversation_type }} {{ conversation.status }}
         {% if conversation.status == 'Pending' %}
-            <a href={% url 'conversation_response' %}?id={{conversation.id}}>Respond</a>
+            <a href={% url 'conversation_response' %}?conversation_id={{conversation.id}}>Respond</a>
         {% endif %}
         {% if conversation.status == 'Sent' %}
-            <a href={% url 'check_conversation' %}?id={{conversation.id}}>Check Status</a>
+            <a href={% url 'check_conversation' %}?conversation_id={{conversation.id}}>Check Status</a>
         {% endif %}
         {% if conversation.status == 'Active' %}
             [Completed]

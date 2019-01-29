@@ -2,13 +2,13 @@
 
 {% load i18n %}
 
-{% block page_title %} {% trans "Open Connection" %} {% endblock %}
+{% block page_title %} {% trans "Wallet Login" %} {% endblock %}
 
 {% block main_content %} 
 
-<form action="{% url form_handle %}" method="POST">
+<form action="{% url 'indyconfig:wallet_login' %}" method="POST">
     {% csrf_token %}
-    {{form.as_p}}
+    {{ form.as_p }}
     <button type="submit">Submit</button>
 </form>
 

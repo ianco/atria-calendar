@@ -30,16 +30,4 @@ urlpatterns = [
          name='swingtime-event'),
     path('event-detail/<int:event_pk>/<int:pk>/', atria_occurrence_view,
          name='swingtime-occurrence'),
-
-    path('send_invitation/', handle_connection_request, name='send_invitation'),
-    path('list_connections/', list_connections, name='list_connections'),
-    path('connection_response/', handle_connection_response, name='connection_response'),
-    path('check_connection/', poll_connection_status, name='check_connection'),
-    path('form_response/', form_response, name='form_response'),
-    path('list_conversations/', list_conversations, name='list_conversations'),
-    path('conversation_response/', handle_conversation_response, name='conversation_response'),
-    path('credential_offer/', handle_credential_offer, name='credential_offer'),
-    path('check_conversation/', poll_conversation_status, name='check_conversation'),
-    path('wallet_login/', handle_wallet_login, name='wallet_login'),
-    path('wallet_logout/', handle_wallet_logout, name='wallet_logout'),
 ]

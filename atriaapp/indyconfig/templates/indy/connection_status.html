@@ -2,11 +2,11 @@
 
 {% load i18n %}
 
-{% block page_title %} {% trans "Confirm Connection" %} {% endblock %}
+{% block page_title %} {% trans "Check Connection Status" %} {% endblock %}
 
 {% block main_content %} 
 
-<form action="{% url 'connection_response' %}" method="POST">
+<form action="{% url 'indyconfig:check_connection' %}" method="POST">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Submit</button>

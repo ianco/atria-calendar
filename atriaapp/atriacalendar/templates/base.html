@@ -206,11 +206,11 @@
           <p> Logged in as: {{ request.user }} 
           {% if request.session.user_wallet_handle %}
             <p> [user wallet {{request.session.user_wallet_owner}}:{{ request.session.user_wallet_handle }}]
-            <a href="{% url 'wallet_logout' %}">logout wallet</a>
+            <a href="{% url 'indyconfig:wallet_logout' %}">logout wallet</a>
           {% endif %}
           {% if request.session.org_wallet_handle %}
             <p> [org wallet {{request.session.org_wallet_owner}}:{{ request.session.org_wallet_handle }}]
-            <a href="{% url 'wallet_logout' %}">logout wallet</a>
+            <a href="{% url 'indyconfig:wallet_logout' %}">logout wallet</a>
           {% endif %}
           </p>
         {% endif %}
@@ -260,13 +260,13 @@
             {% endif %}
             {% if request.user.is_authenticated %}
             <li>
-              <a href="{% url 'list_connections' %}">{% trans "List Connections" %}</a>
+              <a href="{% url 'indyconfig:list_connections' %}">{% trans "List Connections" %}</a>
             </li>
             <li>
-              <a href="{% url 'list_conversations' %}">{% trans "List Conversations" %}</a>
+              <a href="{% url 'indyconfig:list_conversations' %}">{% trans "List Conversations" %}</a>
             </li>
             <li>
-              <a href="{% url 'wallet_login' %}">{% trans "Wallet Login" %}</a>
+              <a href="{% url 'indyconfig:wallet_login' %}">{% trans "Wallet Login" %}</a>
             </li>
             <li>
               <a href="{% url 'logout' %}">{% trans "Log Out" %}</a>

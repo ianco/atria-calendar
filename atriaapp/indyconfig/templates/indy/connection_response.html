@@ -2,11 +2,11 @@
 
 {% load i18n %}
 
-{% block page_title %} {% trans "Send Connection Invitation" %} {% endblock %}
+{% block page_title %} {% trans "Confirm Connection" %} {% endblock %}
 
 {% block main_content %} 
 
-<form action="{% url 'send_invitation' %}" method="POST">
+<form action="{% url 'indyconfig:connection_response' %}" method="POST">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">Submit</button>

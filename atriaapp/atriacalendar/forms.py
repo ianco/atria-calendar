@@ -6,7 +6,6 @@ from swingtime import models as swingtime_models
 from swingtime import forms as swingtime_forms
 
 from .models import *
-import indyconfig.models as indy_models
 
 
 # class EventForm(TranslationModelForm):

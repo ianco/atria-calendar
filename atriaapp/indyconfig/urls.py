@@ -21,6 +21,7 @@ urlpatterns = [
     path('conversation_response/', handle_conversation_response, name='conversation_response'),
     path('credential_offer/', handle_credential_offer, name='credential_offer'),
     path('check_conversation/', poll_conversation_status, name='check_conversation'),
+    path('list_credentials/', list_wallet_credentials, name='list_credentials'),
     path('wallet_login/', handle_wallet_login, name='wallet_login'),
     path('wallet_logout/', handle_wallet_logout, name='wallet_logout'),
 

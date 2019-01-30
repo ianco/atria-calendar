@@ -10,9 +10,10 @@ from rest_framework import status
 import asyncio
 import json
 
-from .indyutils import create_wallet, open_wallet, get_wallet_name, initialize_and_provision_vcx, send_connection_invitation, send_connection_confirmation, check_connection_status, send_credential_offer, send_credential_request
+from .indyutils import create_wallet, open_wallet, get_wallet_name, initialize_and_provision_vcx, send_connection_invitation, send_connection_confirmation, check_connection_status, send_credential_offer, send_credential_request, run_coroutine_with_args
 from .indyauth import indy_wallet_logout, user_wallet_logged_in_handler, user_wallet_logged_out_handler, IndyRestAuthentication
 from indy.error import ErrorCode, IndyError
+from indy.anoncreds import prover_search_credentials, prover_fetch_credentials, prover_close_credentials_search
 
 from .forms import *
 from .models import *
@@ -493,6 +494,32 @@ def form_response(request):
     msg = request.GET.get('msg', None)
     msg_txt = request.GET.get('msg_txt', None)
     return render(request, 'indy/form_response.html', {'msg': msg, 'msg_txt': msg_txt})
+
+def list_wallet_credentials(request):
+    # TODO call anoncreds:prover_search_credentials 
+    #       and anoncreds:prover_fetch_credentials() 
+    #       and anoncreds:prover_close_credentials_search()
+    # ... and pass the credential list to the template
+    if 'wallet_name' in request.session:
+        wallet_name = request.session['wallet_name']
+        if 'user_wallet_handle' in request.session:
+            wallet_handle = request.session['user_wallet_handle']
+        elif 'org_wallet_handle' in request.session:
+            wallet_handle = request.session['org_wallet_handle']
+        else:
+            wallet_handle = None
+
+        (search_handle, search_count) = run_coroutine_with_args(prover_search_credentials, wallet_handle, "{}")
+        credentials = run_coroutine_with_args(prover_fetch_credentials, search_handle, search_count)
+        run_coroutine_with_args(prover_close_credentials_search, search_handle)
+
+        print(credentials)
+
+        #credentials = [{'partner_name': 'Abc', 'status': 'Active'}, {'partner_name': 'Def', 'status': 'Passive'}]
+
+        return render(request, 'indy/list_credentials.html', {'wallet_name': wallet_name, 'credentials': json.loads(credentials)})
+
+    return render(request, 'indy/list_credentials.html', {'wallet_name': 'No wallet selected', 'credentials': []})
 
 
 ###########################################

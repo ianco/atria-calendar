@@ -448,7 +448,7 @@ def handle_conversation_response(request):
                 credential_data = send_credential_request(wallet, json.loads(vcx_config), json.loads(my_connection.connection_data), my_connection.partner_name, my_conversation)
 
                 my_conversation.status = 'Sent'
-                my_conversation.conversation_data = credential_data
+                my_conversation.conversation_data = json.dumps(credential_data)
                 my_conversation.conversation_type = 'CredentialRequest'
                 my_conversation.save()
 

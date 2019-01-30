@@ -47,13 +47,13 @@ def vcx_provision_config(wallet_name, raw_password, institution_name, institutio
 
     return provisionConfig
 
+
 def initialize_and_provision_vcx(wallet_name, raw_password, institution_name, institution_logo_url='http://robohash.org/456'):
     provisionConfig = vcx_provision_config(wallet_name, raw_password, institution_name, institution_logo_url)
 
     print(" >>> Provision an agent and wallet, get back configuration details")
     try:
         provisionConfig_json = json.dumps(provisionConfig)
-        print(provisionConfig_json)
         config = run_coroutine_with_args(vcx_agent_provision, provisionConfig_json)
     except:
         raise
@@ -69,16 +69,15 @@ def initialize_and_provision_vcx(wallet_name, raw_password, institution_name, in
     print(" >>> Initialize libvcx with new configuration for", institution_name)
     try:
         config_json = json.dumps(config)
-        print(config_json)
         run_coroutine_with_args(vcx_init_with_config, config_json)
     except:
         raise
-
-    print(" >>> Shutdown vcx (for now)")
-    try:
-        shutdown(False)
-    except:
-        raise
+    finally:
+        print(" >>> Shutdown vcx (for now)")
+        try:
+            shutdown(False)
+        except:
+            raise
 
     print(" >>> Done!!!")
     return json.dumps(config)
@@ -104,12 +103,12 @@ def send_connection_invitation(config, partner_name):
         connection_to_ = None
     except:
         raise
-
-    print(" >>> Shutdown vcx (for now)")
-    try:
-        shutdown(False)
-    except:
-        raise
+    finally:
+        print(" >>> Shutdown vcx (for now)")
+        try:
+            shutdown(False)
+        except:
+            raise
 
     print(" >>> Done!!!")
     return connection_data, invite_details
@@ -135,12 +134,12 @@ def send_connection_confirmation(config, partner_name, invite_details):
         connection_from_ = None
     except:
         raise
-
-    print(" >>> Shutdown vcx (for now)")
-    try:
-        shutdown(False)
-    except:
-        raise
+    finally:
+        print(" >>> Shutdown vcx (for now)")
+        try:
+            shutdown(False)
+        except:
+            raise
 
     print(" >>> Done!!!")
     return connection_data
@@ -169,12 +168,12 @@ def check_connection_status(config, connection_data):
         connection_to_ = None
     except:
         raise
-
-    print(" >>> Shutdown vcx (for now)")
-    try:
-        shutdown(False)
-    except:
-        raise
+    finally:
+        print(" >>> Shutdown vcx (for now)")
+        try:
+            shutdown(False)
+        except:
+            raise
 
     print(" >>> Done!!!")
     return connection_data, return_state
@@ -228,12 +227,12 @@ def create_schema_and_creddef(wallet, config, schema_name, creddef_name):
 
     except:
         raise
-
-    print(" >>> Shutdown vcx (for now)")
-    try:
-        shutdown(False)
-    except:
-        raise
+    finally:
+        print(" >>> Shutdown vcx (for now)")
+        try:
+            shutdown(False)
+        except:
+            raise
 
     print(" >>> Done!!!")
 
@@ -264,12 +263,12 @@ def send_credential_offer(wallet, config, connection_data, partner_name, credent
         credential_data = run_coroutine(credential.serialize)
     except:
         raise
-
-    print(" >>> Shutdown vcx (for now)")
-    try:
-        shutdown(False)
-    except:
-        raise
+    finally:
+        print(" >>> Shutdown vcx (for now)")
+        try:
+            shutdown(False)
+        except:
+            raise
 
     print(" >>> Done!!!")
     return credential_data
@@ -299,12 +298,12 @@ def send_credential_request(wallet, config, connection_data, partner_name, my_co
         credential_data = run_coroutine(credential.serialize)
     except:
         raise
-
-    print(" >>> Shutdown vcx (for now)")
-    try:
-        shutdown(False)
-    except:
-        raise
+    finally:
+        print(" >>> Shutdown vcx (for now)")
+        try:
+            shutdown(False)
+        except:
+            raise
 
     print(" >>> Done!!!")
     return credential_data
@@ -361,13 +360,16 @@ def handle_inbound_messages(my_wallet, config, my_connection):
                 new_request.save()
                 handled_count = handled_count + 1
     except:
-        raise
-
-    print(" >>> Shutdown vcx (for now)")
-    try:
-        shutdown(False)
-    except:
-        raise
+        # TODO ignore polling errors for now ...
+        #raise
+        print("Error polling offers and proof requests")
+        pass
+    finally:
+        print(" >>> Shutdown vcx (for now)")
+        try:
+            shutdown(False)
+        except:
+            raise
 
     print(" >>> Done!!!")
 
@@ -385,29 +387,73 @@ def poll_message_conversations(my_wallet, config, my_connection):
     try:
         polled_count = 0
 
+        connection = run_coroutine_with_args(Connection.deserialize, json.loads(my_connection.connection_data))
+
         # Any conversations of status 'Sent' are for bot processing ...
         messages = VcxConversation.objects.filter(wallet_name=my_wallet, connection_partner_name=my_connection.partner_name, status='Sent')
 
         # TODO the magic goes here ...
         for message in messages:
-            print(" ... Checking message", message.message_id)
-            # de-serialize message content
+            print(" ... Checking message", message.message_id, message.conversation_type)
+
+            # handle based on message type and status:
+            if message.conversation_type == 'CredentialOffer':
+                # offer sent from issuer to individual
+                # de-serialize message content
+                credential = run_coroutine_with_args(IssuerCredential.deserialize, json.loads(message.conversation_data))
+
+                run_coroutine(credential.update_state)
+                credential_state = run_coroutine(credential.get_state)
+                print("Updated status = ", credential_state)
+
+                if credential_state == State.RequestReceived:
+                    print("Sending credential")
+                    run_coroutine_with_args(credential.send_credential, connection)
+                elif credential_state == State.Accepted:
+                    message.status = 'Accepted'
+
+                # serialize/deserialize credential - wait for Faber to send credential
+                print("Saving message with a status of ", message.message_id, message.conversation_type, message.status)
+                credential_data = run_coroutine(credential.serialize)
+                message.conversation_data = json.dumps(credential_data)
+                message.save()
             
-            # handle per message type
-            
-            # save updated conversation status
+            elif message.conversation_type == 'CredentialRequest':
+                # cred request sent from individual to offerer
+                print(message.conversation_data)
+                conversation_data_json = json.loads(message.conversation_data)
+                credential = run_coroutine_with_args(Credential.deserialize, conversation_data_json)
+
+                run_coroutine(credential.update_state)
+                credential_state = run_coroutine(credential.get_state)
+                print("Updated status = ", credential_state)
+
+                if credential_state == State.Accepted:
+                    message.status = 'Accepted'
+
+                print("Saving message with a status of ", message.message_id, message.conversation_type, message.status)
+                credential_data = run_coroutine(credential.serialize)
+                message.conversation_data = json.dumps(credential_data)
+                message.save()
+
+            else:
+                # TODO proof request and proof offer
+                print("Error unknown conversation type", message.message_id, message.conversation_type)
 
             polled_count = polled_count + 1
 
             pass
     except:
+        # TODO ignore polling errors for now ...
         raise
-
-    print(" >>> Shutdown vcx (for now)")
-    try:
-        shutdown(False)
-    except:
-        raise
+        #print("Error polling conversation status")
+        #pass
+    finally:
+        print(" >>> Shutdown vcx (for now)")
+        try:
+            shutdown(False)
+        except:
+            raise
 
     print(" >>> Done!!!")
 

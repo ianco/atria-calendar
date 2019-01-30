@@ -31,7 +31,7 @@ class PollConnectionStatusForm(WalletLoginForm):
     connection_id = forms.IntegerField(label="Id")
 
     def __init__(self, *args, **kwargs):
-        super(SendConnectionResponseForm, self).__init__(*args, **kwargs)
+        super(PollConnectionStatusForm, self).__init__(*args, **kwargs)
         self.fields['wallet_name'].widget.attrs['readonly'] = True
         self.fields['connection_id'].widget.attrs['readonly'] = True
 

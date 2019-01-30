@@ -13,8 +13,6 @@ from .indyutils import check_connection_status, handle_inbound_messages, poll_me
 
 @background(schedule=5)
 def vcx_agent_background_task(message, user_id, session_key, org_id=None):
-    print('demo_task. message={0}'.format(message))
-
     # check if user/wallet has a valid session
     user = User.objects.filter(id=user_id).first()
     try:

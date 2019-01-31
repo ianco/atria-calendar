@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% load i18n %}
+
+{% block page_title %} {% trans "Poll for Messages" %} {% endblock %}
+
+{% block main_content %} 
+
+<form action="{% url 'indyconfig:check_messages' %}" method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Submit</button>
+</form>
+
+{% endblock %}

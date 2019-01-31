@@ -6,12 +6,12 @@
 
 {% block main_content %} 
 
-<p> Wallet: {{ wallet_name }}
-
+<p> Wallet: {{ wallet_name }} </p>
+<p>
   <ul class="connections">
     {% for connection in connections %}
       <li>
-        {{ connection.partner_name }} {{ connection.status }}
+        {{ connection.partner_name }} {{ connection.connection_type }} {{ connection.status }}
         {% if connection.status == 'Pending' %}
             <a href={% url 'indyconfig:connection_response' %}?id={{connection.id}}>Respond</a>
         {% endif %}
@@ -19,9 +19,14 @@
             <a href={% url 'indyconfig:check_connection' %}?id={{connection.id}}>Check Status</a>
         {% endif %}
         {% if connection.status == 'Active' %}
+          {% if connection.connection_type == 'Outbound' %}
             <a href={% url 'indyconfig:credential_offer' %}?connection_id={{connection.id}}>Send Credential</a> 
             or 
             <a href=''>Send Proof Request</a>
+          {% endif %}
+          {% if connection.connection_type == 'Inbound' %}
+            <a href={% url 'indyconfig:check_messages' %}?connection_id={{connection.id}}>Poll for Messages</a>
+          {% endif %}
         {% endif %}
       </li>
     {% endfor %}

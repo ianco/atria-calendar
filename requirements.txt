@@ -6,8 +6,8 @@ django-heroku
 python3-indy
 python3-wrapper-vcx
 django-extensions
-pygraphviz
-pydotplus
+#pygraphviz
+#pydotplus
 djangorestframework
 markdown
 django-filter

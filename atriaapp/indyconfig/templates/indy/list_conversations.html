@@ -6,14 +6,20 @@
 
 {% block main_content %} 
 
-<p> Wallet: {{ wallet_name }}
+<p> Wallet: {{ wallet_name }} </p>
 
+<p>
   <ul class="conversations">
     {% for conversation in conversations %}
       <li>
         {{ conversation.connection_partner_name }} {{ conversation.conversation_type }} {{ conversation.status }}
         {% if conversation.status == 'Pending' %}
-            <a href={% url 'indyconfig:conversation_response' %}?conversation_id={{conversation.id}}>Respond</a>
+          {% if conversation.conversation_type == 'CredentialOffer' %}
+            <a href={% url 'indyconfig:conversation_response' %}?conversation_id={{conversation.id}}>Accept Offer</a>
+          {% endif %}
+          {% if conversation.conversation_type == 'ProofRequest' %}
+            <a href={% url 'indyconfig:conversation_response' %}?conversation_id={{conversation.id}}>Supply Proof</a>
+          {% endif %}
         {% endif %}
         {% if conversation.status == 'Sent' %}
             <a href={% url 'indyconfig:check_conversation' %}?conversation_id={{conversation.id}}>Check Status</a>
@@ -25,5 +31,7 @@
     {% endfor %}
   </ul>
 </p>
+
+<p><a href={% url 'indyconfig:check_messages' %}>Poll for Messages on All Connections</a></p>
 
 {% endblock %}

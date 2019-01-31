@@ -50,7 +50,8 @@ def vcx_agent_background_task(message, user_id, session_key, org_id=None):
         connections = VcxConnection.objects.filter(wallet_name=wallet, status='Active').all()
         for connection in connections:
             # check for outstanding, un-received messages - add to outstanding conversations
-            msg_count = handle_inbound_messages(wallet, json.loads(wallet.vcx_config), connection)
+            if connection.connection_type == 'Inbound':
+                msg_count = handle_inbound_messages(wallet, json.loads(wallet.vcx_config), connection)
 
             # TODO check status of any in-flight conversations (send/receive credential or request/provide proof)
             polled_count = poll_message_conversations(wallet, json.loads(wallet.vcx_config), connection)

@@ -376,6 +376,83 @@ def handle_inbound_messages(my_wallet, config, my_connection):
     return handled_count
 
 
+def poll_message_conversation(my_wallet, config, my_connection, message, initialize_vcx=True):
+    if initialize_vcx:
+        print(" >>> Initialize libvcx with configuration")
+        try:
+            config_json = json.dumps(config)
+            run_coroutine_with_args(vcx_init_with_config, config_json)
+        except:
+            raise
+
+    try:
+        print(" ... Checking message", message.message_id, message.conversation_type)
+
+        connection = run_coroutine_with_args(Connection.deserialize, json.loads(my_connection.connection_data))
+
+        polled_count = 0
+
+        # handle based on message type and status:
+        if message.conversation_type == 'CredentialOffer':
+            # offer sent from issuer to individual
+            # de-serialize message content
+            credential = run_coroutine_with_args(IssuerCredential.deserialize, json.loads(message.conversation_data))
+
+            run_coroutine(credential.update_state)
+            credential_state = run_coroutine(credential.get_state)
+            print("Updated status = ", credential_state)
+
+            if credential_state == State.RequestReceived:
+                print("Sending credential")
+                run_coroutine_with_args(credential.send_credential, connection)
+            elif credential_state == State.Accepted:
+                message.status = 'Accepted'
+
+            # serialize/deserialize credential - wait for Faber to send credential
+            print("Saving message with a status of ", message.message_id, message.conversation_type, message.status)
+            credential_data = run_coroutine(credential.serialize)
+            message.conversation_data = json.dumps(credential_data)
+            message.save()
+        
+        elif message.conversation_type == 'CredentialRequest':
+            # cred request sent from individual to offerer
+            conversation_data_json = json.loads(message.conversation_data)
+            credential = run_coroutine_with_args(Credential.deserialize, conversation_data_json)
+
+            run_coroutine(credential.update_state)
+            credential_state = run_coroutine(credential.get_state)
+            print("Updated status = ", credential_state)
+
+            if credential_state == State.Accepted:
+                message.status = 'Accepted'
+
+            print("Saving message with a status of ", message.message_id, message.conversation_type, message.status)
+            credential_data = run_coroutine(credential.serialize)
+            message.conversation_data = json.dumps(credential_data)
+            message.save()
+
+        else:
+            # TODO proof request and proof offer
+            print("Error unknown conversation type", message.message_id, message.conversation_type)
+
+        polled_count = polled_count + 1
+
+        pass
+    except:
+        raise
+    finally:
+        if initialize_vcx:
+            print(" >>> Shutdown vcx (for now)")
+            try:
+                shutdown(False)
+            except:
+                raise
+
+    print(" >>> Done!!!")
+
+    return polled_count
+
+
 def poll_message_conversations(my_wallet, config, my_connection):
     print(" >>> Initialize libvcx with configuration")
     try:
@@ -387,67 +464,15 @@ def poll_message_conversations(my_wallet, config, my_connection):
     try:
         polled_count = 0
 
-        connection = run_coroutine_with_args(Connection.deserialize, json.loads(my_connection.connection_data))
-
         # Any conversations of status 'Sent' are for bot processing ...
         messages = VcxConversation.objects.filter(wallet_name=my_wallet, connection_partner_name=my_connection.partner_name, status='Sent')
 
-        # TODO the magic goes here ...
         for message in messages:
-            print(" ... Checking message", message.message_id, message.conversation_type)
-
-            # handle based on message type and status:
-            if message.conversation_type == 'CredentialOffer':
-                # offer sent from issuer to individual
-                # de-serialize message content
-                credential = run_coroutine_with_args(IssuerCredential.deserialize, json.loads(message.conversation_data))
-
-                run_coroutine(credential.update_state)
-                credential_state = run_coroutine(credential.get_state)
-                print("Updated status = ", credential_state)
-
-                if credential_state == State.RequestReceived:
-                    print("Sending credential")
-                    run_coroutine_with_args(credential.send_credential, connection)
-                elif credential_state == State.Accepted:
-                    message.status = 'Accepted'
-
-                # serialize/deserialize credential - wait for Faber to send credential
-                print("Saving message with a status of ", message.message_id, message.conversation_type, message.status)
-                credential_data = run_coroutine(credential.serialize)
-                message.conversation_data = json.dumps(credential_data)
-                message.save()
-            
-            elif message.conversation_type == 'CredentialRequest':
-                # cred request sent from individual to offerer
-                print(message.conversation_data)
-                conversation_data_json = json.loads(message.conversation_data)
-                credential = run_coroutine_with_args(Credential.deserialize, conversation_data_json)
-
-                run_coroutine(credential.update_state)
-                credential_state = run_coroutine(credential.get_state)
-                print("Updated status = ", credential_state)
-
-                if credential_state == State.Accepted:
-                    message.status = 'Accepted'
-
-                print("Saving message with a status of ", message.message_id, message.conversation_type, message.status)
-                credential_data = run_coroutine(credential.serialize)
-                message.conversation_data = json.dumps(credential_data)
-                message.save()
-
-            else:
-                # TODO proof request and proof offer
-                print("Error unknown conversation type", message.message_id, message.conversation_type)
-
-            polled_count = polled_count + 1
-
+            count = poll_message_conversation(my_wallet, config, my_connection, message, initialize_vcx=False)
+            polled_count = polled_count + count
             pass
     except:
-        # TODO ignore polling errors for now ...
         raise
-        #print("Error polling conversation status")
-        #pass
     finally:
         print(" >>> Shutdown vcx (for now)")
         try:

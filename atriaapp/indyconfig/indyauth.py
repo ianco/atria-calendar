@@ -125,7 +125,7 @@ def user_logged_in_handler(sender, request, user, **kwargs):
         wallet_name = None
     print("Login user {} {} {}".format(user.email, request.session.session_key, wallet_name))
     (session, session_created) = IndySession.objects.get_or_create(user=user, session_id=request.session.session_key, wallet_name=wallet_name)
-    vcx_agent_background_task("Started by user login", user.id, request.session.session_key, repeat=30)
+    vcx_agent_background_task("Started by user login", user.id, request.session.session_key, repeat=20)
 
 
 def user_logged_out_handler(sender, user, request, **kwargs):

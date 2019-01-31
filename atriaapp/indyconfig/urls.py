@@ -17,6 +17,7 @@ urlpatterns = [
     path('connection_response/', handle_connection_response, name='connection_response'),
     path('check_connection/', poll_connection_status, name='check_connection'),
     path('form_response/', form_response, name='form_response'),
+    path('check_messages/', check_connection_messages, name='check_messages'),
     path('list_conversations/', list_conversations, name='list_conversations'),
     path('conversation_response/', handle_conversation_response, name='conversation_response'),
     path('credential_offer/', handle_credential_offer, name='credential_offer'),

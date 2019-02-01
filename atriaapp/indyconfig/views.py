@@ -459,7 +459,7 @@ def handle_credential_offer(request):
     return render(request, 'indy/credential_offer.html', {'form': form})
 
 
-def handle_conversation_response(request):
+def handle_cred_offer_response(request):
     if request.method=='POST':
         form = SendCredentialResponseForm(request.POST)
         if form.is_valid():
@@ -534,7 +534,154 @@ def handle_conversation_response(request):
                                                  'libindy_offer_schema_id': json.loads(indy_conversation['libindy_offer'])['schema_id']
                                                 })
 
-    return render(request, 'indy/conversation_response.html', {'form': form})
+    return render(request, 'indy/cred_offer_response.html', {'form': form})
+
+
+def handle_proof_req_response(request):
+    if request.method=='POST':
+        form = SendProofReqResponseForm(request.POST)
+        if form.is_valid():
+            # log out of current wallet, if any
+            indy_wallet_logout(None, request.user, request)
+    
+            cd = form.cleaned_data
+
+            wallet_name = cd.get('wallet_name')
+            raw_password = cd.get('raw_password')
+            conversation_id = cd.get('conversation_id')
+            proof_req_name = cd.get('proof_req_name')
+
+            # get user or org associated with this wallet
+            related_user = User.objects.filter(wallet_name=wallet_name).all()
+            related_org = AtriaOrganization.objects.filter(wallet_name=wallet_name).all()
+            if len(related_user) == 0 and len(related_org) == 0:
+                raise Exception('Error wallet with no owner {}'.format(wallet_name))
+            wallet = IndyWallet.objects.filter(wallet_name=wallet_name).first()
+
+            if 0 < len(related_user):
+                vcx_config = wallet.vcx_config
+                my_name = related_user[0].email
+            elif 0 < len(related_org):
+                vcx_config = wallet.vcx_config
+                my_name = related_org[0].org_name
+
+            # find conversation request
+            conversations = VcxConversation.objects.filter(id=conversation_id).all()
+            # TODO validate conversation id
+            my_conversation = conversations[0]
+            indy_conversation = json.loads(my_conversation.conversation_data)
+            connections = VcxConnection.objects.filter(wallet_name=my_conversation.wallet_name, partner_name=my_conversation.connection_partner_name).all()
+            # TODO validate connection id
+            my_connection = connections[0]
+
+            # find claims for this proof request and display for the user
+            try:
+                claim_data = get_claims_for_proof_request(wallet, json.loads(vcx_config), json.loads(my_connection.connection_data), my_connection.partner_name, my_conversation)
+
+                handle_wallet_login(request)
+
+                form = SelectProofReqClaimsForm(initial={
+                         'conversation_id': conversation_id,
+                         'wallet_name': my_connection.wallet_name,
+                         'from_partner_name': my_connection.partner_name,
+                         'proof_req_name': proof_req_name,
+                         'requested_attrs': json.dumps(claim_data),
+                    })
+
+                return render(request, 'indy/proof_select_claims.html', {'form': form})
+            except IndyError:
+                # ignore errors for now
+                print(" >>> Failed to find claims for", wallet_name)
+                return render(request, 'indy/form_response.html', {'msg': 'Failed to find claims for ' + wallet_name})
+
+    else:
+        # find conversation request, fill in form details
+        conversation_id = request.GET.get('conversation_id', None)
+        conversations = VcxConversation.objects.filter(id=conversation_id).all()
+        # TODO validate conversation id
+        conversation = conversations[0]
+        indy_conversation = json.loads(conversation.conversation_data)
+        connections = VcxConnection.objects.filter(wallet_name=conversation.wallet_name, partner_name=conversation.connection_partner_name).all()
+        # TODO validate connection id
+        connection = connections[0]
+        form = SendProofReqResponseForm(initial={ 
+                                                 'conversation_id': conversation_id,
+                                                 'wallet_name': connection.wallet_name,
+                                                 'from_partner_name': connection.partner_name,
+                                                 'proof_req_name': indy_conversation['proof_request_data']['name'],
+                                                 'requested_attrs': indy_conversation['proof_request_data']['requested_attributes'],
+                                                })
+
+    return render(request, 'indy/proof_req_response.html', {'form': form})
+
+
+def handle_proof_select_claims(request):
+    if request.method=='POST':
+        form = SelectProofReqClaimsForm(request.POST)
+        if form.is_valid():
+            # log out of current wallet, if any
+            indy_wallet_logout(None, request.user, request)
+    
+            cd = form.cleaned_data
+
+            wallet_name = cd.get('wallet_name')
+            raw_password = cd.get('raw_password')
+            conversation_id = cd.get('conversation_id')
+            proof_req_name = cd.get('proof_req_name')
+
+            # get user or org associated with this wallet
+            related_user = User.objects.filter(wallet_name=wallet_name).all()
+            related_org = AtriaOrganization.objects.filter(wallet_name=wallet_name).all()
+            if len(related_user) == 0 and len(related_org) == 0:
+                raise Exception('Error wallet with no owner {}'.format(wallet_name))
+            wallet = IndyWallet.objects.filter(wallet_name=wallet_name).first()
+
+            if 0 < len(related_user):
+                vcx_config = wallet.vcx_config
+                my_name = related_user[0].email
+            elif 0 < len(related_org):
+                vcx_config = wallet.vcx_config
+                my_name = related_org[0].org_name
+
+            # find conversation request
+            conversations = VcxConversation.objects.filter(id=conversation_id).all()
+            # TODO validate conversation id
+            my_conversation = conversations[0]
+            indy_conversation = json.loads(my_conversation.conversation_data)
+            connections = VcxConnection.objects.filter(wallet_name=my_conversation.wallet_name, partner_name=my_conversation.connection_partner_name).all()
+            # TODO validate connection id
+            my_connection = connections[0]
+
+            # get selected attributes for proof request
+            requested_attributes = indy_conversation['proof_request_data']['requested_attributes']
+            credential_attrs = {}
+            for attr in requested_attributes:
+                field_name = 'proof_req_attr_' + attr
+                print('view field_name', field_name)
+                choice = int(request.POST.get(field_name))
+                credential_attrs[attr] = choice
+
+            # send claims for this proof request to requestor
+            try:
+                proof_data = send_claims_for_proof_request(wallet, json.loads(vcx_config), json.loads(my_connection.connection_data), my_connection.partner_name, my_conversation, credential_attrs)
+
+                my_conversation.status = 'Accepted'
+                my_conversation.conversation_type = 'ProofOffer'
+                my_conversation.conversation_data = json.dumps(proof_data)
+                my_conversation.save()
+
+                print(" >>> Updated conversation for", wallet_name, )
+
+                handle_wallet_login(request)
+
+                return render(request, 'indy/form_response.html', {'msg': 'Sent proof request for ' + wallet_name})
+            except IndyError:
+                # ignore errors for now
+                print(" >>> Failed to find claims for", wallet_name)
+                return render(request, 'indy/form_response.html', {'msg': 'Failed to find claims for ' + wallet_name})
+
+    else:
+        return render(request, 'indy/form_response.html', {'msg': 'Method not allowed'})
 
 
 def poll_conversation_status(request):
@@ -602,6 +749,88 @@ def poll_conversation_status(request):
     return render(request, 'indy/check_conversation.html', {'form': form})
 
 
+def handle_proof_request(request):
+    if request.method=='POST':
+        form = SendProofRequestForm(request.POST)
+        if form.is_valid():
+            # log out of current wallet, if any
+            indy_wallet_logout(None, request.user, request)
+    
+            cd = form.cleaned_data
+
+            #now in the object cd, you have the form as a dictionary.
+            connection_id = cd.get('connection_id')
+            wallet_name = cd.get('wallet_name')
+            raw_password = cd.get('raw_password')
+            proof_uuid = cd.get('proof_uuid')
+            proof_name = cd.get('proof_name')
+            proof_attrs = cd.get('proof_attrs')
+
+            # get user or org associated with this wallet
+            related_user = User.objects.filter(wallet_name=wallet_name).all()
+            related_org = AtriaOrganization.objects.filter(wallet_name=wallet_name).all()
+            if len(related_user) == 0 and len(related_org) == 0:
+                raise Exception('Error wallet with no owner {}'.format(wallet_name))
+            wallet = IndyWallet.objects.filter(wallet_name=wallet_name).first()
+
+            if 0 < len(related_user):
+                vcx_config = wallet.vcx_config
+                my_name = related_user[0].email
+            elif 0 < len(related_org):
+                vcx_config = wallet.vcx_config
+                my_name = related_org[0].org_name
+
+            connections = VcxConnection.objects.filter(id=connection_id).all()
+            # TODO validate connection id
+            my_connection = connections[0]
+            connection_data = my_connection.connection_data
+
+            # set wallet password
+            # TODO vcx_config['something'] = raw_password
+
+            # build the proof request and send
+            try:
+                conversation_data = send_proof_request(wallet, json.loads(vcx_config), json.loads(connection_data), my_connection.partner_name, proof_uuid, proof_name, proof_attrs)
+
+                my_conversation = VcxConversation(
+                    wallet_name = wallet,
+                    connection_partner_name = my_connection.partner_name,
+                    conversation_type = 'ProofRequest',
+                    message_id = 'N/A',
+                    status = 'Sent',
+                    conversation_data = json.dumps(conversation_data))
+                my_conversation.save()
+
+                print(" >>> Updated conversation for", wallet_name, )
+
+                handle_wallet_login(request)
+
+                return render(request, 'indy/form_response.html', {'msg': 'Updated conversation for ' + wallet_name})
+            except IndyError:
+                # ignore errors for now
+                print(" >>> Failed to update conversation for", wallet_name)
+                return render(request, 'indy/form_response.html', {'msg': 'Failed to update conversation for ' + wallet_name})
+
+    else:
+        # find conversation request
+        connection_id = request.GET.get('connection_id', None)
+        connections = VcxConnection.objects.filter(id=connection_id).all()
+        connection = connections[0]
+        connection_data = json.loads(connection.connection_data)
+        institution_did = connection_data['data']['public_did']
+        proof_attrs = [
+            {'name': 'name', 'restrictions': [{'issuer_did': institution_did}]},
+            {'name': 'date', 'restrictions': [{'issuer_did': institution_did}]},
+            {'name': 'degree', 'restrictions': [{'issuer_did': institution_did}]}
+        ]
+        # TODO validate connection id
+        form = SendProofRequestForm(initial={ 'connection_id': connection_id,
+                                              'wallet_name': connection.wallet_name,
+                                              'proof_attrs': json.dumps(proof_attrs) })
+
+    return render(request, 'indy/proof_request.html', {'form': form})
+
+
 def form_response(request):
     msg = request.GET.get('msg', None)
     msg_txt = request.GET.get('msg_txt', None)
@@ -609,10 +838,6 @@ def form_response(request):
 
 
 def list_wallet_credentials(request):
-    # TODO call anoncreds:prover_search_credentials 
-    #       and anoncreds:prover_fetch_credentials() 
-    #       and anoncreds:prover_close_credentials_search()
-    # ... and pass the credential list to the template
     if 'wallet_name' in request.session:
         wallet_name = request.session['wallet_name']
         if 'user_wallet_handle' in request.session:

@@ -309,6 +309,115 @@ def send_credential_request(wallet, config, connection_data, partner_name, my_co
     return credential_data
 
 
+def send_proof_request(wallet, config, connection_data, partner_name, proof_uuid, proof_name, proof_attrs):
+    print(" >>> Initialize libvcx with new configuration for a cred offer to", partner_name)
+    try:
+        config_json = json.dumps(config)
+        run_coroutine_with_args(vcx_init_with_config, config_json)
+    except:
+        raise
+
+    # create connection and generate invitation
+    try:
+        my_connection = run_coroutine_with_args(Connection.deserialize, connection_data)
+
+        # create a proof request
+        proof = run_coroutine_with_args(Proof.create, proof_uuid, proof_name, json.loads(proof_attrs), {})
+
+        run_coroutine_with_args(proof.request_proof, my_connection)
+
+        # serialize/deserialize credential - waiting for Alice to rspond with Credential Request
+        proof_data = run_coroutine(proof.serialize)
+    except:
+        raise
+    finally:
+        print(" >>> Shutdown vcx (for now)")
+        try:
+            shutdown(False)
+        except:
+            raise
+
+    print(" >>> Done!!!")
+    return proof_data
+
+
+def get_claims_for_proof_request(wallet, config, connection_data, partner_name, my_conversation):
+    print(" >>> Initialize libvcx with new configuration for a cred offer to", partner_name)
+    try:
+        config_json = json.dumps(config)
+        run_coroutine_with_args(vcx_init_with_config, config_json)
+    except:
+        raise
+
+    # create connection and generate invitation
+    try:
+        my_connection = run_coroutine_with_args(Connection.deserialize, connection_data)
+
+        # create a proof request
+        proof = run_coroutine_with_args(DisclosedProof.create, 'proof', json.loads(my_conversation.conversation_data))
+
+        creds_for_proof = run_coroutine(proof.get_creds)
+
+        # serialize/deserialize proof 
+        proof_data = run_coroutine(proof.serialize)
+
+    except:
+        raise
+    finally:
+        print(" >>> Shutdown vcx (for now)")
+        try:
+            shutdown(False)
+        except:
+            raise
+
+    print(" >>> Done!!!")
+    return (creds_for_proof, proof_data)
+
+
+def send_claims_for_proof_request(wallet, config, connection_data, partner_name, my_conversation, credential_attrs):
+    print(" >>> Initialize libvcx with new configuration for a cred offer to", partner_name)
+    try:
+        config_json = json.dumps(config)
+        run_coroutine_with_args(vcx_init_with_config, config_json)
+    except:
+        raise
+
+    # create connection and generate invitation
+    try:
+        my_connection = run_coroutine_with_args(Connection.deserialize, connection_data)
+
+        # load proof request
+        proof = run_coroutine_with_args(DisclosedProof.create, 'proof', json.loads(my_conversation.conversation_data))
+        creds_for_proof = run_coroutine(proof.get_creds)
+
+        print('creds_for_proof', creds_for_proof)
+        print('credential_attrs', credential_attrs)
+        for attr in creds_for_proof['attrs']:
+            selected = credential_attrs[attr]
+            creds_for_proof['attrs'][attr] = {
+                'credential': creds_for_proof['attrs'][attr][selected]
+            }
+
+        # generate and send proof
+        run_coroutine_with_args(proof.generate_proof, creds_for_proof, {})
+        run_coroutine_with_args(proof.send_proof, my_connection)
+
+        # serialize/deserialize proof 
+        proof_data = run_coroutine(proof.serialize)
+
+    except:
+        raise
+    finally:
+        print(" >>> Shutdown vcx (for now)")
+        try:
+            shutdown(False)
+        except:
+            raise
+
+    print(" >>> Done!!!")
+    return proof_data
+
+
 def handle_inbound_messages(my_wallet, config, my_connection):
     print(" >>> Initialize libvcx with configuration")
     try:
@@ -405,6 +514,7 @@ def poll_message_conversation(my_wallet, config, my_connection, message, initial
             if credential_state == State.RequestReceived:
                 print("Sending credential")
                 run_coroutine_with_args(credential.send_credential, connection)
+                message.conversation_type = 'IssueCredential'
             elif credential_state == State.Accepted:
                 message.status = 'Accepted'
 
@@ -431,8 +541,51 @@ def poll_message_conversation(my_wallet, config, my_connection, message, initial
             message.conversation_data = json.dumps(credential_data)
             message.save()
 
+        elif message.conversation_type == 'IssueCredential':
+            # credential sent, waiting for acceptance
+            # de-serialize message content
+            credential = run_coroutine_with_args(IssuerCredential.deserialize, json.loads(message.conversation_data))
+
+            run_coroutine(credential.update_state)
+            credential_state = run_coroutine(credential.get_state)
+            print("Updated status = ", credential_state)
+
+            if credential_state == State.Accepted:
+                message.status = 'Accepted'
+
+            # serialize/deserialize credential - wait for Faber to send credential
+            print("Saving message with a status of ", message.message_id, message.conversation_type, message.status)
+            credential_data = run_coroutine(credential.serialize)
+            message.conversation_data = json.dumps(credential_data)
+            message.save()
+        
+        elif message.conversation_type == 'ProofRequest':
+            # proof request send, waiting for proof offer
+            # de-serialize message content
+            proof = run_coroutine_with_args(Proof.deserialize, json.loads(message.conversation_data))
+
+            run_coroutine(proof.update_state)
+            proof_state = run_coroutine(proof.get_state)
+            print("Updated status = ", proof_state)
+
+            if proof_state == State.Accepted:
+                message.status = 'Accepted'
+                run_coroutine_with_args(proof.get_proof, connection)
+
+                if proof.proof_state == ProofState.Verified:
+                    print("proof is verified!!")
+                    message.proof_state = 'Verified'
+                else:
+                    print("could not verify proof :(")
+                    message.proof_state = 'Not Verified'
+
+            # serialize/deserialize credential - wait for Faber to send credential
+            print("Saving message with a status of ", message.message_id, message.conversation_type, message.status)
+            proof_data = run_coroutine(proof.serialize)
+            message.conversation_data = json.dumps(proof_data)
+            message.save()
+
         else:
-            # TODO proof request and proof offer
             print("Error unknown conversation type", message.message_id, message.conversation_type)
 
         polled_count = polled_count + 1

@@ -65,6 +65,7 @@ class VcxConversation(models.Model):
     conversation_type = models.CharField(max_length=30)
     message_id = models.CharField(max_length=30)
     status = models.CharField(max_length=20)
+    proof_state = models.CharField(max_length=20, blank=True)
     conversation_data = models.TextField(max_length=4000, blank=True)
 
     def __str__(self):

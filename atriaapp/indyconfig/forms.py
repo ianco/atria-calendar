@@ -1,4 +1,5 @@
 from django import forms
+import json
 
 from .models import *
 
@@ -64,6 +65,7 @@ class SendCredentialOfferForm(WalletLoginForm):
     def __init__(self, *args, **kwargs):
         super(SendCredentialOfferForm, self).__init__(*args, **kwargs)
         self.fields['wallet_name'].widget.attrs['readonly'] = True
+        self.fields['connection_id'].widget.attrs['readonly'] = True
 
 
 class SendCredentialResponseForm(SendConversationResponseForm):
@@ -82,3 +84,45 @@ class SendCredentialResponseForm(SendConversationResponseForm):
         self.fields['credential_attrs'].widget.attrs['readonly'] = True
         self.fields['libindy_offer_schema_id'].widget.attrs['readonly'] = True
 
+
+class SendProofRequestForm(WalletLoginForm):
+    connection_id = forms.IntegerField(label="Connection Id")
+    proof_uuid = forms.CharField(label='Proof UUID', max_length=40)
+    proof_name = forms.CharField(label='Proof Name', max_length=40)
+    proof_attrs = forms.CharField(label='Proof Attrs', max_length=4000, widget=forms.Textarea)
+
+    def __init__(self, *args, **kwargs):
+        super(SendProofRequestForm, self).__init__(*args, **kwargs)
+        self.fields['wallet_name'].widget.attrs['readonly'] = True
+        self.fields['connection_id'].widget.attrs['readonly'] = True
+
+
+class SendProofReqResponseForm(SendConversationResponseForm):
+    # a bunch of fields that are read-only to present to the user
+    from_partner_name = forms.CharField(label='Partner Name', max_length=20)
+    proof_req_name = forms.CharField(label='Proof Request Name', max_length=40)
+    requested_attrs = forms.CharField(label='Requested Attrs', max_length=4000, widget=forms.HiddenInput)
+
+    def __init__(self, *args, **kwargs):
+        super(SendProofReqResponseForm, self).__init__(*args, **kwargs)
+        self.fields['from_partner_name'].widget.attrs['readonly'] = True
+        self.fields['proof_req_name'].widget.attrs['readonly'] = True
+        self.fields['requested_attrs'].widget.attrs['readonly'] = True
+
+
+class SelectProofReqClaimsForm(SendProofReqResponseForm):
+
+    def __init__(self, *args, **kwargs):
+        super(SelectProofReqClaimsForm, self).__init__(*args, **kwargs)
+        initial = kwargs.get('initial')
+        if initial:
+            field_attrs = json.loads(initial.get('requested_attrs', '{}'))
+            for attr in field_attrs[0]['attrs']:
+                field_name = 'proof_req_attr_' + attr
+                print('form field_name', field_name)
+                choices = []
+                claim_no = 0
+                for claim in field_attrs[0]['attrs'][attr]:
+                    choices.append((claim_no, json.dumps(claim)))
+                    claim_no = claim_no + 1
+                self.fields[field_name] = forms.ChoiceField(label='Select claim for '+attr, choices=tuple(choices), widget=forms.RadioSelect())

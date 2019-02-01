@@ -657,7 +657,6 @@ def handle_proof_select_claims(request):
             credential_attrs = {}
             for attr in requested_attributes:
                 field_name = 'proof_req_attr_' + attr
-                print('view field_name', field_name)
                 choice = int(request.POST.get(field_name))
                 credential_attrs[attr] = choice
 
@@ -850,10 +849,6 @@ def list_wallet_credentials(request):
         (search_handle, search_count) = run_coroutine_with_args(prover_search_credentials, wallet_handle, "{}")
         credentials = run_coroutine_with_args(prover_fetch_credentials, search_handle, search_count)
         run_coroutine_with_args(prover_close_credentials_search, search_handle)
-
-        print(credentials)
-
-        #credentials = [{'partner_name': 'Abc', 'status': 'Active'}, {'partner_name': 'Def', 'status': 'Passive'}]
 
         return render(request, 'indy/list_credentials.html', {'wallet_name': wallet_name, 'credentials': json.loads(credentials)})
 

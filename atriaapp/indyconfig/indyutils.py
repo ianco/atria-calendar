@@ -390,8 +390,6 @@ def send_claims_for_proof_request(wallet, config, connection_data, partner_name,
         proof = run_coroutine_with_args(DisclosedProof.create, 'proof', json.loads(my_conversation.conversation_data))
         creds_for_proof = run_coroutine(proof.get_creds)
 
-        print('creds_for_proof', creds_for_proof)
-        print('credential_attrs', credential_attrs)
         for attr in creds_for_proof['attrs']:
             selected = credential_attrs[attr]
             creds_for_proof['attrs'][attr] = {

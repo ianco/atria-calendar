@@ -119,7 +119,6 @@ class SelectProofReqClaimsForm(SendProofReqResponseForm):
             field_attrs = json.loads(initial.get('requested_attrs', '{}'))
             for attr in field_attrs[0]['attrs']:
                 field_name = 'proof_req_attr_' + attr
-                print('form field_name', field_name)
                 choices = []
                 claim_no = 0
                 for claim in field_attrs[0]['attrs'][attr]:

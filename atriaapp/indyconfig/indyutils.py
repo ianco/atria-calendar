@@ -25,7 +25,7 @@ from vcx.common import shutdown
 from .models import *
 
 
-def vcx_provision_config(wallet_name, raw_password, institution_name, institution_logo_url='http://robohash.org/456'):
+def vcx_provision_config(wallet_name, raw_password, institution_name, org_role='', institution_logo_url='http://robohash.org/456'):
     provisionConfig = {
         'agency_url': settings.INDY_CONFIG['vcx_agency_url'],
         'agency_did': settings.INDY_CONFIG['vcx_agency_did'],
@@ -37,8 +37,12 @@ def vcx_provision_config(wallet_name, raw_password, institution_name, institutio
         'storage_config': json.dumps(settings.INDY_CONFIG['storage_config']),
         'storage_credentials': json.dumps(settings.INDY_CONFIG['storage_credentials']),
         'payment_method': settings.INDY_CONFIG['vcx_payment_method'],
-        'enterprise_seed': settings.INDY_CONFIG['vcx_enterprise_seed'],
     }
+
+    if org_role == 'Trustee':
+        provisionConfig['enterprise_seed'] = settings.INDY_CONFIG['vcx_enterprise_seed']
+    else:
+        provisionConfig['enterprise_seed'] = (settings.INDY_CONFIG['vcx_institution_seed'] + wallet_name)[-32:]
 
     provisionConfig['institution_name'] = institution_name
     provisionConfig['institution_logo_url'] = institution_logo_url
@@ -48,13 +52,14 @@ def vcx_provision_config(wallet_name, raw_password, institution_name, institutio
     return provisionConfig
 
 
-def initialize_and_provision_vcx(wallet_name, raw_password, institution_name, institution_logo_url='http://robohash.org/456'):
-    provisionConfig = vcx_provision_config(wallet_name, raw_password, institution_name, institution_logo_url)
+def initialize_and_provision_vcx(wallet_name, raw_password, institution_name, org_role='', institution_logo_url='http://robohash.org/456'):
+    provisionConfig = vcx_provision_config(wallet_name, raw_password, institution_name, org_role, institution_logo_url)
 
     print(" >>> Provision an agent and wallet, get back configuration details")
     try:
         provisionConfig_json = json.dumps(provisionConfig)
         config = run_coroutine_with_args(vcx_agent_provision, provisionConfig_json)
+        print("config", config)
     except:
         raise
 
@@ -180,8 +185,9 @@ def check_connection_status(config, connection_data):
 
 
 # TODO for now just create a random schema and creddef
-def create_schema_and_creddef(wallet, config, schema_name, creddef_name):
-    print(" >>> Initialize libvcx with configuration")
+def create_schema(wallet, config, schema_name):
+    # generic config for creating schemas
+    print(" >>> Initialize libvcx with trustee configuration")
     try:
         config_json = json.dumps(config)
         run_coroutine_with_args(vcx_init_with_config, config_json)
@@ -204,12 +210,35 @@ def create_schema_and_creddef(wallet, config, schema_name, creddef_name):
                             )
         indy_schema.save()
 
+    except:
+        raise
+    finally:
+        print(" >>> Shutdown vcx (for now)")
+        try:
+            shutdown(False)
+        except:
+            raise
+
+    return indy_schema
+
+
+# TODO for now just create a random schema and creddef
+def create_creddef(wallet, config, indy_schema, creddef_name):
+    # wallet specific-configuration for creatig the cred def
+    print(" >>> Initialize libvcx with wallet-specific configuration")
+    try:
+        config_json = json.dumps(config)
+        run_coroutine_with_args(vcx_init_with_config, config_json)
+    except:
+        raise
+
+    try:
         creddef_template = {
                     'name': '',
                     'date': '',
                     'degree': '',
                     }
-        cred_def = run_coroutine_with_args(CredentialDef.create, 'credef_uuid', creddef_name, schema_id, 0)
+        cred_def = run_coroutine_with_args(CredentialDef.create, 'credef_uuid', creddef_name, indy_schema.ledger_schema_id, 0)
         cred_def_handle = cred_def.handle
         cred_def_id = run_coroutine(cred_def.get_cred_def_id)
         creddef_data = run_coroutine(cred_def.serialize)
@@ -236,7 +265,7 @@ def create_schema_and_creddef(wallet, config, schema_name, creddef_name):
 
     print(" >>> Done!!!")
 
-    return (indy_schema, indy_creddef)
+    return indy_creddef
 
 
 def send_credential_offer(wallet, config, connection_data, partner_name, credential_tag, schema_attrs, cred_def, credential_name):

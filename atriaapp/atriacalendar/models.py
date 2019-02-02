@@ -129,8 +129,9 @@ class AtriaOrganization(models.Model):
     date_joined = models.DateTimeField(default=timezone.now)
     status = models.CharField(max_length=8)
     password = models.CharField(max_length=12)
-    #wallet_name = models.CharField(max_length=30, blank=True)
     wallet_name = models.ForeignKey('indyconfig.IndyWallet', to_field="wallet_name", blank = True, null=True, on_delete=models.CASCADE)
+    # add a role - setup one organization as the "Trustee"
+    org_role = models.CharField(max_length=40, blank=True)
 
     def __str__(self):
         return self.org_name + ", " +  self.status

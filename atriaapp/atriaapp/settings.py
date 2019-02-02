@@ -64,6 +64,7 @@ INDY_CONFIG = {
     'vcx_agency_verkey': 'Hezce2UWMZ3wUhVkh2LfKSs8nDzWwzs2Win7EzNN3YaR',
     'vcx_payment_method': 'null',
     'vcx_enterprise_seed': '000000000000000000000000Trustee1',
+    'vcx_institution_seed': '00000000000000000000000000000000',
     'vcx_genesis_path': '/tmp/atria-genesis.txt',
 }
 

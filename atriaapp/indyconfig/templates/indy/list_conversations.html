@@ -27,7 +27,8 @@
         {% if conversation.status == 'Accepted' %}
             [Completed]
           {% if conversation.conversation_type == 'ProofRequest' %}
-            Proof is {{ conversation.proof_state }}
+            Proof is <a href={% url 'indyconfig:view_proof' %}?conversation_id={{conversation.id}}>
+            {{ conversation.proof_state }}</a>
           {% endif %}
         {% endif %}
       </li>

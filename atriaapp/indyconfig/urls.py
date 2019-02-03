@@ -24,6 +24,7 @@ urlpatterns = [
     path('proof_select_claims/', handle_proof_select_claims, name='proof_select_claims'),
     path('credential_offer/', handle_credential_offer, name='credential_offer'),
     path('proof_request/', handle_proof_request, name='proof_request'),
+    path('view_proof/', handle_view_proof, name='view_proof'),
     path('check_conversation/', poll_conversation_status, name='check_conversation'),
     path('list_credentials/', list_wallet_credentials, name='list_credentials'),
     path('wallet_login/', handle_wallet_login, name='wallet_login'),

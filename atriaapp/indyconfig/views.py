@@ -830,6 +830,14 @@ def handle_proof_request(request):
     return render(request, 'indy/proof_request.html', {'form': form})
 
 
+def handle_view_proof(request):
+    conversation_id = request.GET.get('conversation_id', None)
+    conversations = VcxConversation.objects.filter(id=conversation_id).all()
+    # TODO validate conversation id
+    conversation = conversations[0]
+    return render(request, 'indy/form_response.html', {'msg': "Proof Reveived", 'msg_txt': conversation.conversation_data})
+
+
 def form_response(request):
     msg = request.GET.get('msg', None)
     msg_txt = request.GET.get('msg_txt', None)

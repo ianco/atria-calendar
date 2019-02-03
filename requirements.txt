@@ -11,5 +11,3 @@ markdown
 django-filter
 django-background-tasks
 aiohttp~=3.3.0
-
-

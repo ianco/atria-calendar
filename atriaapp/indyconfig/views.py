@@ -482,19 +482,7 @@ def handle_credential_offer(request):
                 return render(request, 'indy/form_response.html', {'msg': 'Failed to update conversation for ' + wallet_name})
 
     else:
-        # find conversation request
-        connection_id = request.GET.get('connection_id', None)
-        connections = VcxConnection.objects.filter(id=connection_id).all()
-        # TODO validate connection id
-        cred_defs = IndyCredentialDefinition.objects.filter(id=creddef_id).all()
-        cred_def = cred_defs[0]
-        schema_attrs = cred_def.creddef_template
-        form = SendCredentialOfferForm(initial={ 'connection_id': connection_id,
-                                                 'wallet_name': connections[0].wallet_name,
-                                                 'cred_def': creddef_id,
-                                                 'schema_attrs': schema_attrs })
-
-    return render(request, 'indy/credential_offer.html', {'form': form})
+        return render(request, 'indy/form_response.html', {'msg': 'Method not allowed'})
 
 
 def handle_cred_offer_response(request):
@@ -625,6 +613,8 @@ def handle_proof_req_response(request):
                          'proof_req_name': proof_req_name,
                          'requested_attrs': json.dumps(claim_data),
                     })
+
+                handle_wallet_login(request)
 
                 return render(request, 'indy/proof_select_claims.html', {'form': form})
             except IndyError:

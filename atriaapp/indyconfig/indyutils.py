@@ -1,4 +1,5 @@
 import asyncio
+import aiohttp
 import json
 from os import environ
 from pathlib import Path
@@ -25,6 +26,12 @@ from vcx.common import shutdown
 from .models import *
 
 
+def wallet_seed(wallet_name, org_role=''):
+    if org_role == 'Trustee':
+        return settings.INDY_CONFIG['vcx_enterprise_seed']
+    else:
+        return (settings.INDY_CONFIG['vcx_institution_seed'] + wallet_name)[-32:]
+
 def vcx_provision_config(wallet_name, raw_password, institution_name, org_role='', institution_logo_url='http://robohash.org/456'):
     provisionConfig = {
         'agency_url': settings.INDY_CONFIG['vcx_agency_url'],
@@ -39,10 +46,8 @@ def vcx_provision_config(wallet_name, raw_password, institution_name, org_role='
         'payment_method': settings.INDY_CONFIG['vcx_payment_method'],
     }
 
-    if org_role == 'Trustee':
-        provisionConfig['enterprise_seed'] = settings.INDY_CONFIG['vcx_enterprise_seed']
-    else:
-        provisionConfig['enterprise_seed'] = (settings.INDY_CONFIG['vcx_institution_seed'] + wallet_name)[-32:]
+    # role-dependant did seed
+    provisionConfig['enterprise_seed'] = wallet_seed(wallet_name, org_role)
 
     provisionConfig['institution_name'] = institution_name
     provisionConfig['institution_logo_url'] = institution_logo_url
@@ -50,6 +55,39 @@ def vcx_provision_config(wallet_name, raw_password, institution_name, org_role='
     provisionConfig['pool_name'] = 'pool_' + wallet_name
 
     return provisionConfig
+
+
+async def register_did_on_ledger(ledger_url, alias, seed):
+    try:
+        async with aiohttp.ClientSession() as client:
+            response = await client.post(
+                "{}/register".format(ledger_url),
+                json={"alias": alias, "seed": seed, "role": "TRUST_ANCHOR"},
+            )
+            nym_info = await response.json()
+            print(nym_info)
+    except Exception as e:
+        raise Exception(str(e)) from None
+    if not nym_info or not nym_info["did"]:
+        raise Exception(
+            "DID registration failed: {}".format(nym_info)
+        )
+    return nym_info
+
+
+def create_and_register_did(wallet_name, org_role):
+    if org_role == 'Trustee':
+        # don't register Trustee role
+        return
+
+    if not settings.INDY_CONFIG['register_dids']:
+        return
+
+    enterprise_seed = wallet_seed(wallet_name, org_role)
+    ledger_url = settings.INDY_CONFIG['ledger_url']
+    nym_info = run_coroutine_with_args(register_did_on_ledger, ledger_url, wallet_name, enterprise_seed)
+
+    return nym_info
 
 
 def initialize_and_provision_vcx(wallet_name, raw_password, institution_name, org_role='', institution_logo_url='http://robohash.org/456'):

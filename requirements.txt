@@ -6,9 +6,10 @@ django-heroku
 python3-indy
 python3-wrapper-vcx
 django-extensions
-#pygraphviz
-#pydotplus
 djangorestframework
 markdown
 django-filter
 django-background-tasks
+aiohttp~=3.3.0
+
+

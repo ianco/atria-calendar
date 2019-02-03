@@ -66,6 +66,8 @@ INDY_CONFIG = {
     'vcx_enterprise_seed': '000000000000000000000000Trustee1',
     'vcx_institution_seed': '00000000000000000000000000000000',
     'vcx_genesis_path': '/tmp/atria-genesis.txt',
+    'register_dids': True,
+    'ledger_url': 'http://localhost:9000',
 }
 
 REST_FRAMEWORK = {

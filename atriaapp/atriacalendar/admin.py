@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 import json
 
-from indyconfig.indyutils import create_wallet, delete_wallet, get_org_wallet_name, initialize_and_provision_vcx, create_schema, create_creddef
+from indyconfig.indyutils import create_wallet, delete_wallet, get_org_wallet_name, create_and_register_did, initialize_and_provision_vcx, create_schema, create_creddef
 
 from .models import *
 from indyconfig import models as indy_models
@@ -42,8 +42,13 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
         print(" >>> save success!!!")
         if not change:
-            # create an Indy wallet - derive wallet name from email, and re-use raw password
+            # register did (seed) before creating and provisioning wallet
             wallet_name = get_org_wallet_name(org_name)
+            if org_role != 'Trustee':
+                # _nym_info is did and verkey, if we need it later (re-computed during agent initialization)
+                _nym_info = create_and_register_did(wallet_name, org_role)
+
+            # create an Indy wallet - derive wallet name from email, and re-use raw password
             print(" >>> create", wallet_name)
             wallet_handle = create_wallet(wallet_name, raw_password)
             

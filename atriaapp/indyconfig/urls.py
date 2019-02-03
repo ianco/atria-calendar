@@ -22,6 +22,7 @@ urlpatterns = [
     path('cred_offer_response/', handle_cred_offer_response, name='cred_offer_response'),
     path('proof_req_response/', handle_proof_req_response, name='proof_req_response'),
     path('proof_select_claims/', handle_proof_select_claims, name='proof_select_claims'),
+    path('select_credential_offer/', handle_select_credential_offer, name='select_credential_offer'),
     path('credential_offer/', handle_credential_offer, name='credential_offer'),
     path('proof_request/', handle_proof_request, name='proof_request'),
     path('view_proof/', handle_view_proof, name='view_proof'),

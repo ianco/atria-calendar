@@ -379,6 +379,42 @@ def list_conversations(request):
     return render(request, 'indy/list_conversations.html', {'wallet_name': 'No wallet selected', 'conversations': []})
 
 
+def handle_select_credential_offer(request):
+    if request.method=='POST':
+        form = SelectCredentialOfferForm(request.POST)
+        if form.is_valid():
+            # log out of current wallet, if any
+            indy_wallet_logout(None, request.user, request)
+
+            cd = form.cleaned_data
+
+            connection_id = cd.get('connection_id')
+            wallet_name = cd.get('wallet_name')
+            cred_def = cd.get('cred_def')
+
+            connections = VcxConnection.objects.filter(id=connection_id).all()
+            # TODO validate connection id
+            schema_attrs = cred_def.creddef_template
+            form = SendCredentialOfferForm(initial={ 'connection_id': connection_id,
+                                                     'wallet_name': connections[0].wallet_name,
+                                                     'cred_def': cred_def.id,
+                                                     'schema_attrs': schema_attrs })
+
+            handle_wallet_login(request)
+
+            return render(request, 'indy/credential_offer.html', {'form': form})
+
+    else:
+        # find conversation request
+        connection_id = request.GET.get('connection_id', None)
+        connections = VcxConnection.objects.filter(id=connection_id).all()
+        # TODO validate connection id
+        form = SelectCredentialOfferForm(initial={ 'connection_id': connection_id,
+                                                   'wallet_name': connections[0].wallet_name})
+
+    return render(request, 'indy/select_credential_offer.html', {'form': form})
+
+
 def handle_credential_offer(request):
     if request.method=='POST':
         form = SendCredentialOfferForm(request.POST)
@@ -393,7 +429,7 @@ def handle_credential_offer(request):
             wallet_name = cd.get('wallet_name')
             raw_password = cd.get('raw_password')
             credential_tag = cd.get('credential_tag')
-            cred_def = cd.get('cred_def')
+            cred_def_id = cd.get('cred_def')
             schema_attrs = cd.get('schema_attrs')
             credential_name = cd.get('credential_name')
 
@@ -415,6 +451,9 @@ def handle_credential_offer(request):
             # TODO validate connection id
             my_connection = connections[0]
             connection_data = my_connection.connection_data
+
+            cred_defs = IndyCredentialDefinition.objects.filter(id=cred_def_id).all()
+            cred_def = cred_defs[0]
 
             # set wallet password
             # TODO vcx_config['something'] = raw_password
@@ -446,15 +485,14 @@ def handle_credential_offer(request):
         # find conversation request
         connection_id = request.GET.get('connection_id', None)
         connections = VcxConnection.objects.filter(id=connection_id).all()
-        schema_attrs = {
-            'name': 'alice',
-            'date': '05-2018',
-            'degree': 'maths',
-        }
         # TODO validate connection id
+        cred_defs = IndyCredentialDefinition.objects.filter(id=creddef_id).all()
+        cred_def = cred_defs[0]
+        schema_attrs = cred_def.creddef_template
         form = SendCredentialOfferForm(initial={ 'connection_id': connection_id,
                                                  'wallet_name': connections[0].wallet_name,
-                                                 'schema_attrs': json.dumps(schema_attrs) })
+                                                 'cred_def': creddef_id,
+                                                 'schema_attrs': schema_attrs })
 
     return render(request, 'indy/credential_offer.html', {'form': form})
 

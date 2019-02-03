@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 import json
 
-from indyconfig.indyutils import create_wallet, delete_wallet, get_org_wallet_name, create_and_register_did, initialize_and_provision_vcx, create_schema, create_creddef
+from indyconfig.indyutils import *
 
 from .models import *
 from indyconfig import models as indy_models
@@ -74,8 +74,25 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                 else:
                     # if there is no Trustee available just use the current org
                     trustee_config = config
-                schema = create_schema(wallet, json.loads(trustee_config), 'schema_' + wallet_name)
-                creddef = create_creddef(wallet, json.loads(config), schema, 'creddef_' + wallet_name)
+                
+                # create a "dummy" schema/cred-def that is unique to this org
+                (schema_json, creddef_template) = create_schema_json('schema_' + wallet_name, random_schema_version(), ['name', 'date', 'degree'])
+                schema = create_schema(wallet, json.loads(trustee_config), schema_json, creddef_template)
+                creddef = create_creddef(wallet, json.loads(config), schema, 'creddef_' + wallet_name, creddef_template)
+
+                # create cred defs for the "default" schemas
+                schemas = IndySchema.objects.filter(schema_name='Transcript', schema_version='1.2').all()
+                schema = schemas[0]
+                creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
+                schemas = IndySchema.objects.filter(schema_name='Job-Certificate', schema_version='0.2').all()
+                schema = schemas[0]
+                creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
+            else:
+                # create some "default" schemas for use by everyone
+                (schema_json, creddef_template) = create_schema_json('Transcript', '1.2', ['first_name', 'last_name', 'degree', 'status', 'year', 'average', 'ssn'])
+                schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
+                (schema_json, creddef_template) = create_schema_json('Job-Certificate', '0.2', ['first_name', 'last_name', 'ssn', 'salary', 'employee_status', 'experience'])
+                schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
 
             super().save_model(request, obj, form, True)
             print(" >>> created wallet", wallet_name)

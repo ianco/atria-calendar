@@ -222,8 +222,25 @@ def check_connection_status(config, connection_data):
     return connection_data, return_state
 
 
+def random_schema_version():
+    version = format("%d.%d.%d" % (random.randint(1, 101), random.randint(1, 101), random.randint(1, 101)))
+    return version
+
+
+def create_schema_json(schema_name, schema_version, schema_attrs):
+    schema = {
+        'name': schema_name,
+        'version': schema_version,
+        'attributes': schema_attrs
+    }
+    creddef_template = {}
+    for attr in schema_attrs:
+        creddef_template[attr] = ''
+    return (json.dumps(schema), json.dumps(creddef_template))
+
+
 # TODO for now just create a random schema and creddef
-def create_schema(wallet, config, schema_name):
+def create_schema(wallet, config, schema_json, schema_template):
     # generic config for creating schemas
     print(" >>> Initialize libvcx with trustee configuration")
     try:
@@ -233,18 +250,18 @@ def create_schema(wallet, config, schema_name):
         raise
 
     try:
-        schema_attrs = ['name', 'date', 'degree']
-        version = format("%d.%d.%d" % (random.randint(1, 101), random.randint(1, 101), random.randint(1, 101)))
-        schema = run_coroutine_with_args(Schema.create, 'schema_uuid', schema_name, version, schema_attrs, 0)
-        schema_id = run_coroutine(schema.get_schema_id)
-        schema_data = run_coroutine(schema.serialize)
+        schema = json.loads(schema_json)
+        vcxschema = run_coroutine_with_args(Schema.create, 'schema_uuid', schema['name'], schema['version'], schema['attributes'], 0)
+        schema_id = run_coroutine(vcxschema.get_schema_id)
+        schema_data = run_coroutine(vcxschema.serialize)
 
         indy_schema = IndySchema(
                             ledger_schema_id = schema_id,
-                            schema_name = schema_name,
-                            schema_version = version,
+                            schema_name = schema['name'],
+                            schema_version = schema['version'],
                             schema = schema_data,
-                            schema_data = json.dumps(schema_attrs)
+                            schema_template = schema_template,
+                            schema_data = json.dumps(schema_data)
                             )
         indy_schema.save()
 
@@ -261,7 +278,7 @@ def create_schema(wallet, config, schema_name):
 
 
 # TODO for now just create a random schema and creddef
-def create_creddef(wallet, config, indy_schema, creddef_name):
+def create_creddef(wallet, config, indy_schema, creddef_name, creddef_template):
     # wallet specific-configuration for creatig the cred def
     print(" >>> Initialize libvcx with wallet-specific configuration")
     try:
@@ -271,11 +288,6 @@ def create_creddef(wallet, config, indy_schema, creddef_name):
         raise
 
     try:
-        creddef_template = {
-                    'name': '',
-                    'date': '',
-                    'degree': '',
-                    }
         cred_def = run_coroutine_with_args(CredentialDef.create, 'credef_uuid', creddef_name, indy_schema.ledger_schema_id, 0)
         cred_def_handle = cred_def.handle
         cred_def_id = run_coroutine(cred_def.get_cred_def_id)
@@ -287,7 +299,7 @@ def create_creddef(wallet, config, indy_schema, creddef_name):
                             wallet_name = wallet,
                             creddef_name = creddef_name,
                             creddef_handle = cred_def_handle,
-                            creddef_template = json.dumps(creddef_template),
+                            creddef_template = creddef_template,
                             creddef_data = json.dumps(creddef_data)
                             )
         indy_creddef.save()

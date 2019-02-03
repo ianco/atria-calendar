@@ -25,6 +25,7 @@ class IndySchema(models.Model):
     schema_name = models.CharField(max_length=40)
     schema_version = models.CharField(max_length=40)
     schema = models.TextField(max_length=4000)
+    schema_template = models.TextField(max_length=4000)
     schema_data = models.TextField(max_length=4000)
 
     def __str__(self):

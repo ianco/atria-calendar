@@ -165,9 +165,12 @@ cd atria-calendar/atriaapp
 3. Kill the 2 docker processes (indy nodes and postgres database):
 
 ```bash
+# to kill the 2 specific dockers:
 docker ps   # (get the process id's)
 docker stop <process 1> <process 2>
 docker rm -f <process 1> <process 2>
+# ... or to indescriminitely kill all dockers:
+docker ps -q  | xargs docker rm -f
 ```
 
 To re-start the environment, just go to step #1 of the previous section.

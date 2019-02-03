@@ -20,7 +20,7 @@
         {% endif %}
         {% if connection.status == 'Active' %}
           {% if connection.connection_type == 'Outbound' %}
-            <a href={% url 'indyconfig:credential_offer' %}?connection_id={{connection.id}}>Send Credential</a> 
+            <a href={% url 'indyconfig:select_credential_offer' %}?connection_id={{connection.id}}>Send Credential</a> 
             or 
             <a href={% url 'indyconfig:proof_request' %}?connection_id={{connection.id}}>Send Proof Request</a>
           {% endif %}

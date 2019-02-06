@@ -10,7 +10,15 @@ class WalletLoginForm(forms.Form):
     raw_password = forms.CharField(label='Password', max_length=20, widget=forms.PasswordInput)
 
 
-class SendConnectionInvitationForm(WalletLoginForm):
+class WalletNameForm(forms.Form):
+    wallet_name = forms.CharField(label='Wallet Name', max_length=20)
+
+    def __init__(self, *args, **kwargs):
+        super(WalletNameForm, self).__init__(*args, **kwargs)
+        self.fields['wallet_name'].widget.attrs['readonly'] = True
+
+
+class SendConnectionInvitationForm(WalletNameForm):
     partner_name = forms.CharField(label='Partner Name', max_length=20)
 
     def __init__(self, *args, **kwargs):
@@ -28,7 +36,7 @@ class SendConnectionResponseForm(SendConnectionInvitationForm):
         #self.fields['invitation_details'].widget.attrs['readonly'] = True
 
 
-class PollConnectionStatusForm(WalletLoginForm):
+class PollConnectionStatusForm(WalletNameForm):
     connection_id = forms.IntegerField(label="Id")
 
     def __init__(self, *args, **kwargs):
@@ -37,7 +45,7 @@ class PollConnectionStatusForm(WalletLoginForm):
         self.fields['connection_id'].widget.attrs['readonly'] = True
 
 
-class SendConversationResponseForm(WalletLoginForm):
+class SendConversationResponseForm(WalletNameForm):
     conversation_id = forms.IntegerField(label="Id")
 
     def __init__(self, *args, **kwargs):
@@ -46,7 +54,7 @@ class SendConversationResponseForm(WalletLoginForm):
         self.fields['conversation_id'].widget.attrs['readonly'] = True
 
 
-class PollConversationStatusForm(WalletLoginForm):
+class PollConversationStatusForm(WalletNameForm):
     conversation_id = forms.IntegerField(label="Id")
 
     def __init__(self, *args, **kwargs):
@@ -55,7 +63,7 @@ class PollConversationStatusForm(WalletLoginForm):
         selffields['conversation_id'].widget.attrs['readonly'] = True
 
 
-class SelectCredentialOfferForm(WalletLoginForm):
+class SelectCredentialOfferForm(WalletNameForm):
     connection_id = forms.IntegerField(label="Connection Id")
     cred_def = forms.ModelChoiceField(label='Cred Def', queryset=IndyCredentialDefinition.objects.all())
 
@@ -69,7 +77,7 @@ class SelectCredentialOfferForm(WalletLoginForm):
             self.fields['cred_def'].queryset = IndyCredentialDefinition.objects.filter(wallet_name__wallet_name=wallet_name).all()
 
 
-class SendCredentialOfferForm(WalletLoginForm):
+class SendCredentialOfferForm(WalletNameForm):
     connection_id = forms.IntegerField(label="Connection Id")
     credential_tag = forms.CharField(label='Credential Tag', max_length=40)
     cred_def = forms.CharField(label='Cred Def', max_length=80)
@@ -100,7 +108,7 @@ class SendCredentialResponseForm(SendConversationResponseForm):
         self.fields['libindy_offer_schema_id'].widget.attrs['readonly'] = True
 
 
-class SendProofRequestForm(WalletLoginForm):
+class SendProofRequestForm(WalletNameForm):
     connection_id = forms.IntegerField(label="Connection Id")
     proof_uuid = forms.CharField(label='Proof UUID', max_length=40)
     proof_name = forms.CharField(label='Proof Name', max_length=40)

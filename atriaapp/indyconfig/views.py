@@ -36,25 +36,8 @@ def handle_wallet_login(request):
             wallet_name = cd.get('wallet_name')
             raw_password = cd.get('raw_password')
 
-            # get user or org associated with this wallet
-            related_user = User.objects.filter(wallet_name=wallet_name).all()
-            related_org = AtriaOrganization.objects.filter(wallet_name=wallet_name).all()
-            if len(related_user) == 0 and len(related_org) == 0:
-                raise Exception('Error wallet with no owner {}'.format(wallet_name))
-
-            # now try to open the wallet
             try:
-                wallet_handle = open_wallet(wallet_name, raw_password)
-
-                if len(related_user) > 0:
-                    request.session['user_wallet_handle'] = wallet_handle
-                    request.session['user_wallet_owner'] = related_user[0].email
-                elif len(related_org) > 0:
-                    request.session['org_wallet_handle'] = wallet_handle
-                    request.session['org_wallet_owner'] = related_org[0].org_name
-                request.session['wallet_name'] = wallet_name
-
-                user_wallet_logged_in_handler(request, request.user, wallet_name)
+                wallet_handle = handle_wallet_login_internal(request, wallet_name, raw_password)
 
                 print(" >>> Opened wallet for", wallet_name, wallet_handle)
                 return render(request, 'indy/form_response.html', {'msg': 'Opened wallet for ' + wallet_name})
@@ -69,6 +52,30 @@ def handle_wallet_login(request):
     return render(request, 'indy/wallet_login.html', {'form': form})
 
 
+def handle_wallet_login_internal(request, wallet_name, raw_password):
+    # get user or org associated with this wallet
+    related_user = User.objects.filter(wallet_name=wallet_name).all()
+    related_org = AtriaOrganization.objects.filter(wallet_name=wallet_name).all()
+    if len(related_user) == 0 and len(related_org) == 0:
+        raise Exception('Error wallet with no owner {}'.format(wallet_name))
+
+    # now try to open the wallet
+    wallet_handle = open_wallet(wallet_name, raw_password)
+
+    request.session['wallet_handle'] = wallet_handle
+    if len(related_user) > 0:
+        request.session['wallet_type'] = 'user'
+        request.session['wallet_owner'] = related_user[0].email
+    elif len(related_org) > 0:
+        request.session['wallet_type'] = 'org'
+        request.session['wallet_owner'] = related_org[0].org_name
+    request.session['wallet_name'] = wallet_name
+    request.session['wallet_password'] = raw_password
+    print(" >>> set wallet password", raw_password)
+
+    user_wallet_logged_in_handler(request, request.user, wallet_name)
+
+
 def handle_wallet_logout(request):
     indy_wallet_logout(None, request.user, request)
     return render(request, 'indy/form_response.html', {'msg': 'Logged out of wallet(s)'})
@@ -79,13 +86,13 @@ def handle_connection_request(request):
         form = SendConnectionInvitationForm(request.POST)
         if form.is_valid():
             # log out of current wallet, if any
+            wallet_name = request.session['wallet_name']
+            raw_password = request.session['wallet_password']
             indy_wallet_logout(None, request.user, request)
     
             cd = form.cleaned_data
 
             #now in the object cd, you have the form as a dictionary.
-            wallet_name = cd.get('wallet_name')
-            raw_password = cd.get('raw_password')
             partner_name = cd.get('partner_name')
 
             # get user or org associated with this wallet
@@ -144,7 +151,7 @@ def handle_connection_request(request):
 
                 print(" >>> Created invite for", wallet_name, partner_name)
 
-                handle_wallet_login(request)
+                handle_wallet_login_internal(request, wallet_name, raw_password)
 
                 return render(request, 'indy/form_response.html', {'msg': 'Updated connection for ' + wallet_name, 'msg_txt': json.dumps(invite_data)})
             except IndyError:
@@ -167,14 +174,14 @@ def handle_connection_response(request):
         form = SendConnectionResponseForm(request.POST)
         if form.is_valid():
             # log out of current wallet, if any
+            wallet_name = request.session['wallet_name']
+            raw_password = request.session['wallet_password']
             indy_wallet_logout(None, request.user, request)
     
             cd = form.cleaned_data
 
             #now in the object cd, you have the form as a dictionary.
             connection_id = cd.get('connection_id')
-            wallet_name = cd.get('wallet_name')
-            raw_password = cd.get('raw_password')
             partner_name = cd.get('partner_name')
             invitation_details = cd.get('invitation_details')
 
@@ -218,7 +225,7 @@ def handle_connection_response(request):
 
                 print(" >>> Updated connection for", wallet_name, partner_name)
 
-                handle_wallet_login(request)
+                handle_wallet_login_internal(request, wallet_name, raw_password)
 
                 return render(request, 'indy/form_response.html', {'msg': 'Updated connection for ' + wallet_name})
             except IndyError:
@@ -250,14 +257,14 @@ def poll_connection_status(request):
         form = PollConnectionStatusForm(request.POST)
         if form.is_valid():
             # log out of current wallet, if any
+            wallet_name = request.session['wallet_name']
+            raw_password = request.session['wallet_password']
             indy_wallet_logout(None, request.user, request)
     
             cd = form.cleaned_data
 
             #now in the object cd, you have the form as a dictionary.
             connection_id = cd.get('connection_id')
-            wallet_name = cd.get('wallet_name')
-            raw_password = cd.get('raw_password')
 
             # get user or org associated with this wallet
             related_user = User.objects.filter(wallet_name=wallet_name).all()
@@ -292,7 +299,7 @@ def poll_connection_status(request):
 
                 print(" >>> Updated connection for", wallet_name)
 
-                handle_wallet_login(request)
+                handle_wallet_login_internal(request, wallet_name, raw_password)
 
                 return render(request, 'indy/form_response.html', {'msg': 'Updated connection for ' + wallet_name})
             except IndyError:
@@ -326,14 +333,14 @@ def check_connection_messages(request):
         form = PollConnectionStatusForm(request.POST)
         if form.is_valid():
             # log out of current wallet, if any
+            wallet_name = request.session['wallet_name']
+            raw_password = request.session['wallet_password']
             indy_wallet_logout(None, request.user, request)
     
             cd = form.cleaned_data
 
             #now in the object cd, you have the form as a dictionary.
             connection_id = cd.get('connection_id')
-            wallet_name = cd.get('wallet_name')
-            raw_password = cd.get('raw_password')
 
             if connection_id > 0:
                 connections = VcxConnection.objects.filter(wallet_name=wallet_name, id=connection_id).all()
@@ -348,7 +355,7 @@ def check_connection_messages(request):
                     msg_count = handle_inbound_messages(wallet, json.loads(wallet.vcx_config), connection)
                     total_count = total_count + msg_count
 
-            handle_wallet_login(request)
+            handle_wallet_login_internal(request, wallet_name, raw_password)
 
             return render(request, 'indy/form_response.html', {'msg': 'Received message count = ' + str(total_count)})
 
@@ -384,12 +391,13 @@ def handle_select_credential_offer(request):
         form = SelectCredentialOfferForm(request.POST)
         if form.is_valid():
             # log out of current wallet, if any
+            wallet_name = request.session['wallet_name']
+            raw_password = request.session['wallet_password']
             indy_wallet_logout(None, request.user, request)
 
             cd = form.cleaned_data
 
             connection_id = cd.get('connection_id')
-            wallet_name = cd.get('wallet_name')
             cred_def = cd.get('cred_def')
 
             connections = VcxConnection.objects.filter(id=connection_id).all()
@@ -400,7 +408,7 @@ def handle_select_credential_offer(request):
                                                      'cred_def': cred_def.id,
                                                      'schema_attrs': schema_attrs })
 
-            handle_wallet_login(request)
+            handle_wallet_login_internal(request, wallet_name, raw_password)
 
             return render(request, 'indy/credential_offer.html', {'form': form})
 
@@ -420,14 +428,14 @@ def handle_credential_offer(request):
         form = SendCredentialOfferForm(request.POST)
         if form.is_valid():
             # log out of current wallet, if any
+            wallet_name = request.session['wallet_name']
+            raw_password = request.session['wallet_password']
             indy_wallet_logout(None, request.user, request)
     
             cd = form.cleaned_data
 
             #now in the object cd, you have the form as a dictionary.
             connection_id = cd.get('connection_id')
-            wallet_name = cd.get('wallet_name')
-            raw_password = cd.get('raw_password')
             credential_tag = cd.get('credential_tag')
             cred_def_id = cd.get('cred_def')
             schema_attrs = cd.get('schema_attrs')
@@ -473,7 +481,7 @@ def handle_credential_offer(request):
 
                 print(" >>> Updated conversation for", wallet_name, )
 
-                handle_wallet_login(request)
+                handle_wallet_login_internal(request, wallet_name, raw_password)
 
                 return render(request, 'indy/form_response.html', {'msg': 'Updated conversation for ' + wallet_name})
             except IndyError:
@@ -490,12 +498,12 @@ def handle_cred_offer_response(request):
         form = SendCredentialResponseForm(request.POST)
         if form.is_valid():
             # log out of current wallet, if any
+            wallet_name = request.session['wallet_name']
+            raw_password = request.session['wallet_password']
             indy_wallet_logout(None, request.user, request)
     
             cd = form.cleaned_data
 
-            wallet_name = cd.get('wallet_name')
-            raw_password = cd.get('raw_password')
             conversation_id = cd.get('conversation_id')
 
             # get user or org associated with this wallet
@@ -532,7 +540,7 @@ def handle_cred_offer_response(request):
 
                 print(" >>> Updated conversation for", wallet_name, )
 
-                handle_wallet_login(request)
+                handle_wallet_login_internal(request, wallet_name, raw_password)
 
                 return render(request, 'indy/form_response.html', {'msg': 'Updated conversation for ' + wallet_name})
             except IndyError:
@@ -568,12 +576,12 @@ def handle_proof_req_response(request):
         form = SendProofReqResponseForm(request.POST)
         if form.is_valid():
             # log out of current wallet, if any
+            wallet_name = request.session['wallet_name']
+            raw_password = request.session['wallet_password']
             indy_wallet_logout(None, request.user, request)
     
             cd = form.cleaned_data
 
-            wallet_name = cd.get('wallet_name')
-            raw_password = cd.get('raw_password')
             conversation_id = cd.get('conversation_id')
             proof_req_name = cd.get('proof_req_name')
 
@@ -604,8 +612,6 @@ def handle_proof_req_response(request):
             try:
                 claim_data = get_claims_for_proof_request(wallet, json.loads(vcx_config), json.loads(my_connection.connection_data), my_connection.partner_name, my_conversation)
 
-                handle_wallet_login(request)
-
                 form = SelectProofReqClaimsForm(initial={
                          'conversation_id': conversation_id,
                          'wallet_name': my_connection.wallet_name,
@@ -614,7 +620,7 @@ def handle_proof_req_response(request):
                          'requested_attrs': json.dumps(claim_data),
                     })
 
-                handle_wallet_login(request)
+                handle_wallet_login_internal(request, wallet_name, raw_password)
 
                 return render(request, 'indy/proof_select_claims.html', {'form': form})
             except IndyError:
@@ -648,12 +654,12 @@ def handle_proof_select_claims(request):
         form = SelectProofReqClaimsForm(request.POST)
         if form.is_valid():
             # log out of current wallet, if any
+            wallet_name = request.session['wallet_name']
+            raw_password = request.session['wallet_password']
             indy_wallet_logout(None, request.user, request)
     
             cd = form.cleaned_data
 
-            wallet_name = cd.get('wallet_name')
-            raw_password = cd.get('raw_password')
             conversation_id = cd.get('conversation_id')
             proof_req_name = cd.get('proof_req_name')
 
@@ -699,7 +705,7 @@ def handle_proof_select_claims(request):
 
                 print(" >>> Updated conversation for", wallet_name, )
 
-                handle_wallet_login(request)
+                handle_wallet_login_internal(request, wallet_name, raw_password)
 
                 return render(request, 'indy/form_response.html', {'msg': 'Sent proof request for ' + wallet_name})
             except IndyError:
@@ -716,12 +722,12 @@ def poll_conversation_status(request):
         form = SendConversationResponseForm(request.POST)
         if form.is_valid():
             # log out of current wallet, if any
+            wallet_name = request.session['wallet_name']
+            raw_password = request.session['wallet_password']
             indy_wallet_logout(None, request.user, request)
     
             cd = form.cleaned_data
 
-            wallet_name = cd.get('wallet_name')
-            raw_password = cd.get('raw_password')
             conversation_id = cd.get('conversation_id')
 
             # get user or org associated with this wallet
@@ -753,7 +759,7 @@ def poll_conversation_status(request):
 
                 print(" >>> Updated conversation for", wallet_name, )
 
-                handle_wallet_login(request)
+                handle_wallet_login_internal(request, wallet_name, raw_password)
 
                 return render(request, 'indy/form_response.html', {'msg': 'Updated conversation for ' + wallet_name})
             except IndyError:
@@ -781,14 +787,14 @@ def handle_proof_request(request):
         form = SendProofRequestForm(request.POST)
         if form.is_valid():
             # log out of current wallet, if any
+            wallet_name = request.session['wallet_name']
+            raw_password = request.session['wallet_password']
             indy_wallet_logout(None, request.user, request)
     
             cd = form.cleaned_data
 
             #now in the object cd, you have the form as a dictionary.
             connection_id = cd.get('connection_id')
-            wallet_name = cd.get('wallet_name')
-            raw_password = cd.get('raw_password')
             proof_uuid = cd.get('proof_uuid')
             proof_name = cd.get('proof_name')
             proof_attrs = cd.get('proof_attrs')
@@ -830,7 +836,7 @@ def handle_proof_request(request):
 
                 print(" >>> Updated conversation for", wallet_name, )
 
-                handle_wallet_login(request)
+                handle_wallet_login_internal(request, wallet_name, raw_password)
 
                 return render(request, 'indy/form_response.html', {'msg': 'Updated conversation for ' + wallet_name})
             except IndyError:
@@ -894,12 +900,7 @@ def form_response(request):
 def list_wallet_credentials(request):
     if 'wallet_name' in request.session:
         wallet_name = request.session['wallet_name']
-        if 'user_wallet_handle' in request.session:
-            wallet_handle = request.session['user_wallet_handle']
-        elif 'org_wallet_handle' in request.session:
-            wallet_handle = request.session['org_wallet_handle']
-        else:
-            wallet_handle = None
+        wallet_handle = request.session['wallet_handle']
 
         (search_handle, search_count) = run_coroutine_with_args(prover_search_credentials, wallet_handle, "{}")
         credentials = run_coroutine_with_args(prover_fetch_credentials, search_handle, search_count)

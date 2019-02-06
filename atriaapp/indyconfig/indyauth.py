@@ -25,9 +25,12 @@ class IndyBackend(ModelBackend):
             if user.wallet_name is not None and user.wallet_name != '':
                 try:
                     wallet_handle = open_wallet(user.wallet_name.wallet_name, password)
-                    request.session['user_wallet_handle'] = wallet_handle
-                    request.session['user_wallet_owner'] = user.email
+                    request.session['wallet_handle'] = wallet_handle
+                    request.session['wallet_owner'] = user.email
+                    request.session['wallet_type'] = 'user'
                     request.session['wallet_name'] = user.wallet_name.wallet_name
+                    request.session['wallet_password'] = password
+                    print(" >>> set wallet password", password)
 
                     #user_wallet_logged_in_handler(request, user, user.wallet_name.wallet_name)
 
@@ -86,24 +89,24 @@ def wallet_authenticate(username, password):
 
 
 def indy_wallet_logout(sender, user, request, **kwargs):
-    wallet_types = {'user_wallet_handle': 'user_wallet_owner', 'org_wallet_handle': 'org_wallet_owner'}
-    for wallet_type in wallet_types:
-        if wallet_type in request.session:
-            wallet_handle = request.session[wallet_type]
-            try:
-                close_wallet(wallet_handle)
-                user_wallet_logged_out_handler(request, user)
-                print(" >>> Closed wallet for", wallet_type, wallet_handle)
-            except IndyError:
-                # ignore errors for now
-                print(" >>> Failed to close wallet for", wallet_type, wallet_handle)
-                pass
-            finally:
-                del request.session[wallet_type]
-                if wallet_types[wallet_type] in request.session:
-                    del request.session[wallet_types[wallet_type]]
-                if 'wallet_name' in request.session:
-                    del request.session['wallet_name']
+    if 'wallet_handle' in request.session:
+        wallet_handle = request.session['wallet_handle']
+        wallet_type = request.session['wallet_type']
+        try:
+            close_wallet(wallet_handle)
+            user_wallet_logged_out_handler(request, user)
+            print(" >>> Closed wallet for", wallet_type, wallet_handle)
+        except IndyError:
+            # ignore errors for now
+            print(" >>> Failed to close wallet for", wallet_type, wallet_handle)
+            pass
+        finally:
+            del request.session['wallet_password']
+            print(" <<< clear wallet password")
+            del request.session['wallet_handle']
+            del request.session['wallet_type']
+            del request.session['wallet_name']
+            del request.session['wallet_owner']
 
 
 def user_wallet_logged_in_handler(request, user, wallet_name):

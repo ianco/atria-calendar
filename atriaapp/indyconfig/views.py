@@ -240,7 +240,7 @@ def handle_connection_response(request):
                 wallet_name = request.session['wallet_name']
             else:
                 wallet_name = ''
-            form = SendConnectionResponseForm(initial={'wallet_name': wallet_name})
+            form = SendConnectionResponseForm(initial={'connection_id': 0, 'wallet_name': wallet_name})
 
     return render(request, 'indy/connection_response.html', {'form': form})
     
@@ -845,6 +845,25 @@ def handle_proof_request(request):
         connection = connections[0]
         connection_data = json.loads(connection.connection_data)
         institution_did = connection_data['data']['public_did']
+
+        # requested_attrs: Describes requested attribute
+        #     {
+        #         "name": string, // attribute name, (case insensitive and ignore spaces)
+        #         "restrictions":  (filter_json) {
+        #            "schema_id": string, (Optional)
+        #            "schema_issuer_did": string, (Optional)
+        #            "schema_name": string, (Optional)
+        #            "schema_version": string, (Optional)
+        #            "issuer_did": string, (Optional)
+        #            "cred_def_id": string, (Optional)
+        #        },
+        #         "non_revoked": {
+        #             "from": Optional<(u64)> Requested time represented as a total number of seconds from Unix Epoch, Optional
+        #             "to": Optional<(u64)>
+        #                 //Requested time represented as a total number of seconds from Unix Epoch, Optional
+        #         }
+        #     }
+
         proof_attrs = [
             {'name': 'name', 'restrictions': [{'issuer_did': institution_did}]},
             {'name': 'date', 'restrictions': [{'issuer_did': institution_did}]},

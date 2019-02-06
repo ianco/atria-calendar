@@ -25,7 +25,7 @@ class SendConnectionResponseForm(SendConnectionInvitationForm):
     def __init__(self, *args, **kwargs):
         super(SendConnectionResponseForm, self).__init__(*args, **kwargs)
         self.fields['connection_id'].widget.attrs['readonly'] = True
-        self.fields['invitation_details'].widget.attrs['readonly'] = True
+        #self.fields['invitation_details'].widget.attrs['readonly'] = True
 
 
 class PollConnectionStatusForm(WalletLoginForm):

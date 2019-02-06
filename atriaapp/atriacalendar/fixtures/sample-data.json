@@ -363,5 +363,45 @@
     "groups": [],
     "user_permissions": []
   }
+},
+{
+    "model": "indyconfig.indyproofrequest",
+    "pk": 1,
+    "fields": {
+        "proof_req_name": "Alice Faber Demo Proof",
+        "proof_req_description": "This is the proof request in the VCX Alice/Faber python demo in the Indy SDK.",
+        "proof_req_attrs": "[\r\n{\"name\": \"name\", \r\n\"restrictions\": [{\"issuer_did\": \"$ISSUER_DID\"}]}, \r\n{\"name\": \"date\", \r\n\"restrictions\": [{\"issuer_did\": \"$ISSUER_DID\"}]}, \r\n{\"name\": \"degree\", \r\n\"restrictions\": [{\"issuer_did\": \"$ISSUER_DID\"}]}\r\n]",
+        "proof_req_predicates": ""
+    }
+},
+{
+    "model": "indyconfig.indyproofrequest",
+    "pk": 2,
+    "fields": {
+        "proof_req_name": "Proof of Education",
+        "proof_req_description": "Proof of education, based on the default Transcript schema",
+        "proof_req_attrs": "[\r\n{\"name\": \"first_name\", \r\n\"restrictions\": []}, \r\n{\"name\": \"last_name\", \r\n\"restrictions\": []}, \r\n{\"name\": \"degree\", \r\n\"restrictions\": [{\"schema_name\": \"Transcript\"}]}, \r\n{\"name\": \"ssn\", \r\n\"restrictions\": [{\"schema_name\": \"Transcript\"}]}\r\n]",
+        "proof_req_predicates": ""
+    }
+},
+{
+    "model": "indyconfig.indyproofrequest",
+    "pk": 3,
+    "fields": {
+        "proof_req_name": "Proof of Employment",
+        "proof_req_description": "Proof of employment/income based on the default Job-Certificate schema",
+        "proof_req_attrs": "[\r\n{\"name\": \"first_name\", \r\n\"restrictions\": []}, \r\n{\"name\": \"last_name\", \r\n\"restrictions\": []}, \r\n{\"name\": \"employee_status\", \r\n\"restrictions\": [{\"schema_name\": \"Job-Certificate\"}]}, \r\n{\"name\": \"ssn\", \r\n\"restrictions\": [{\"schema_name\": \"Job-Certificate\"}]}\r\n]",
+        "proof_req_predicates": ""
+    }
+},
+{
+    "model": "indyconfig.indyproofrequest",
+    "pk": 4,
+    "fields": {
+        "proof_req_name": "Proof of Age",
+        "proof_req_description": "Proof that the bearer is over a certain age, based on a \"birth date\" credential from a trusted issuer",
+        "proof_req_attrs": "[\r\n{\"name\": \"first_name\", \r\n\"restrictions\": [{{\"issuer_did\": \"$ISSUER_DID\"}}]}, \r\n{\"name\": \"last_name\", \r\n\"restrictions\": [{{\"issuer_did\": \"$ISSUER_DID\"}}]}\r\n]",
+        "proof_req_predicates": "[\r\n{\"name\": \"birth_date\",\r\n\"p_type\": \">=\",\r\n\"p_value\": \"$BIRTH_DATE\",\r\n\"restrictions\": [{{\"issuer_did\": \"$ISSUER_DID\"}}]}\r\n]"
+    }
 }
 ]

@@ -75,8 +75,10 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                     # if there is no Trustee available just use the current org
                     trustee_config = config
                 
-                # create a "dummy" schema/cred-def that is unique to this org
-                (schema_json, creddef_template) = create_schema_json('schema_' + wallet_name, random_schema_version(), ['name', 'date', 'degree'])
+                # create a "dummy" schema/cred-def that is unique to this org (matches the Alice/Faber demo schema)
+                (schema_json, creddef_template) = create_schema_json('schema_' + wallet_name, random_schema_version(), [
+                    'name', 'date', 'degree',
+                    ])
                 schema = create_schema(wallet, json.loads(trustee_config), schema_json, creddef_template)
                 creddef = create_creddef(wallet, json.loads(config), schema, 'creddef_' + wallet_name, creddef_template)
 
@@ -89,10 +91,69 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                 creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
             else:
                 # create some "default" schemas for use by everyone
-                (schema_json, creddef_template) = create_schema_json('Transcript', '1.2', ['first_name', 'last_name', 'degree', 'status', 'year', 'average', 'ssn'])
+                # education transcript (proof of education)
+                (schema_json, creddef_template) = create_schema_json('Transcript', '1.2', [
+                    'first_name', 
+                    'last_name', 
+                    'degree', 
+                    'status', 
+                    'year', 
+                    'average', 
+                    'ssn',
+                    ])
                 schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
-                (schema_json, creddef_template) = create_schema_json('Job-Certificate', '0.2', ['first_name', 'last_name', 'ssn', 'salary', 'employee_status', 'experience'])
+                # job transcript (proof of income)
+                (schema_json, creddef_template) = create_schema_json('Job-Certificate', '0.2', [
+                    'first_name', 
+                    'last_name', 
+                    'ssn', 
+                    'salary', 
+                    'employee_status', 
+                    'experience',
+                    ])
                 schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
+                # driver license (proof of age or address)
+                (schema_json, creddef_template) = create_schema_json('Driver-License', '0.9', [
+                    'last_name', 
+                    'first_name', 
+                    'middle_name', 
+                    'dl_number', 
+                    'dl_class', 
+                    'issued_date', 
+                    'expire_date', 
+                    'birth_date', 
+                    'height', 
+                    'weight', 
+                    'sex', 
+                    'eyes', 
+                    'hair', 
+                    'address',
+                    ])
+                schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
+                # passport (proof of age or citizenship)
+                (schema_json, creddef_template) = create_schema_json('Passport', '0.9', [
+                    'last_name', 
+                    'first_name', 
+                    'middle_name', 
+                    'passport_no', 
+                    'ppt_type', 
+                    'issued_date', 
+                    'issued_location',
+                    'expire_date', 
+                    'nationality',
+                    'birth_date', 
+                    'issuing_country',
+                    'issuing_authority',
+                    ])
+                schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
+
+                # Trustee can issue Passport and Driver License
+                schemas = IndySchema.objects.filter(schema_name='Driver-License', schema_version='0.9').all()
+                schema = schemas[0]
+                creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
+                schemas = IndySchema.objects.filter(schema_name='Passport', schema_version='0.9').all()
+                schema = schemas[0]
+                creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
 
             super().save_model(request, obj, form, True)
             print(" >>> created wallet", wallet_name)

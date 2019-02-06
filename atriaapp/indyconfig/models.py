@@ -46,6 +46,17 @@ class IndyCredentialDefinition(models.Model):
         return self.ledger_schema.schema_name + ":" + self.wallet_name.wallet_name + ":" + self.creddef_name
 
 
+# Description of a proof request
+class IndyProofRequest(models.Model):
+    proof_req_name = models.CharField(max_length=40, unique=True)
+    proof_req_description = models.TextField(max_length=4000)
+    proof_req_attrs = models.TextField(max_length=4000)
+    proof_req_predicates = models.TextField(max_length=4000, blank=True)
+
+    def __str__(self):
+        return self.proof_req_name
+
+
 # base class for vcx connections
 class VcxConnection(models.Model):
     wallet_name = models.ForeignKey(IndyWallet, to_field="wallet_name", on_delete=models.CASCADE)

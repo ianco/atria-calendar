@@ -388,7 +388,7 @@ def send_credential_request(wallet, config, connection_data, partner_name, my_co
     return credential_data
 
 
-def send_proof_request(wallet, config, connection_data, partner_name, proof_uuid, proof_name, proof_attrs):
+def send_proof_request(wallet, config, connection_data, partner_name, proof_uuid, proof_name, proof_attrs, proof_predicates):
     print(" >>> Initialize libvcx with new configuration for a cred offer to", partner_name)
     try:
         config_json = json.dumps(config)
@@ -401,7 +401,7 @@ def send_proof_request(wallet, config, connection_data, partner_name, proof_uuid
         my_connection = run_coroutine_with_args(Connection.deserialize, connection_data)
 
         # create a proof request
-        proof = run_coroutine_with_args(Proof.create, proof_uuid, proof_name, json.loads(proof_attrs), {})
+        proof = run_coroutine_with_kwargs(Proof.create, proof_uuid, proof_name, json.loads(proof_attrs), {}, requested_predicates=json.loads(proof_predicates))
 
         run_coroutine_with_args(proof.request_proof, my_connection)
 
@@ -787,6 +787,15 @@ def run_coroutine_with_args(coroutine, *args):
     asyncio.set_event_loop(loop)
     try:
         return loop.run_until_complete(coroutine(*args))
+    finally:
+        loop.close()
+
+
+def run_coroutine_with_kwargs(coroutine, *args, **kwargs):
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(coroutine(*args, **kwargs))
     finally:
         loop.close()
 

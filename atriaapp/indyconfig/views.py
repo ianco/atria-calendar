@@ -798,6 +798,7 @@ def handle_proof_request(request):
             proof_uuid = cd.get('proof_uuid')
             proof_name = cd.get('proof_name')
             proof_attrs = cd.get('proof_attrs')
+            proof_predicates = cd.get('proof_predicates')
 
             # get user or org associated with this wallet
             related_user = User.objects.filter(wallet_name=wallet_name).all()
@@ -823,7 +824,7 @@ def handle_proof_request(request):
 
             # build the proof request and send
             try:
-                conversation_data = send_proof_request(wallet, json.loads(vcx_config), json.loads(connection_data), my_connection.partner_name, proof_uuid, proof_name, proof_attrs)
+                conversation_data = send_proof_request(wallet, json.loads(vcx_config), json.loads(connection_data), my_connection.partner_name, proof_uuid, proof_name, proof_attrs, proof_predicates)
 
                 my_conversation = VcxConversation(
                     wallet_name = wallet,
@@ -870,15 +871,29 @@ def handle_proof_request(request):
         #         }
         #     }
 
+        # requested_predicates: predicate specifications prover must provide claim for
+        #          { // set of requested predicates
+        #             "name": attribute name, (case insensitive and ignore spaces)
+        #             "p_type": predicate type (Currently ">=" only)
+        #             "p_value": int predicate value
+        #             "restrictions": Optional<filter_json>, // see above
+        #             "non_revoked": Optional<{
+        #                 "from": Optional<(u64)> Requested time represented as a total number of seconds from Unix Epoch, Optional
+        #                 "to": Optional<(u64)> Requested time represented as a total number of seconds from Unix Epoch, Optional
+        #             }>
+        #          },
+
         proof_attrs = [
             {'name': 'name', 'restrictions': [{'issuer_did': institution_did}]},
             {'name': 'date', 'restrictions': [{'issuer_did': institution_did}]},
             {'name': 'degree', 'restrictions': [{'issuer_did': institution_did}]}
         ]
+        proof_predicates = []
         # TODO validate connection id
         form = SendProofRequestForm(initial={ 'connection_id': connection_id,
                                               'wallet_name': connection.wallet_name,
-                                              'proof_attrs': json.dumps(proof_attrs) })
+                                              'proof_attrs': json.dumps(proof_attrs),
+                                              'proof_predicates': json.dumps(proof_predicates) })
 
     return render(request, 'indy/proof_request.html', {'form': form})
 

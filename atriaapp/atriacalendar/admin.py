@@ -77,7 +77,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                 
                 # create a "dummy" schema/cred-def that is unique to this org (matches the Alice/Faber demo schema)
                 (schema_json, creddef_template) = create_schema_json('schema_' + wallet_name, random_schema_version(), [
-                    'name', 'date', 'degree',
+                    'name', 'date', 'degree', 'age',
                     ])
                 schema = create_schema(wallet, json.loads(trustee_config), schema_json, creddef_template)
                 creddef = create_creddef(wallet, json.loads(config), schema, 'creddef_' + wallet_name, creddef_template)

@@ -688,8 +688,13 @@ def handle_proof_select_claims(request):
 
             # get selected attributes for proof request
             requested_attributes = indy_conversation['proof_request_data']['requested_attributes']
+            requested_predicates = indy_conversation['proof_request_data']['requested_predicates']
             credential_attrs = {}
             for attr in requested_attributes:
+                field_name = 'proof_req_attr_' + attr
+                choice = int(request.POST.get(field_name))
+                credential_attrs[attr] = choice
+            for attr in requested_predicates:
                 field_name = 'proof_req_attr_' + attr
                 choice = int(request.POST.get(field_name))
                 credential_attrs[attr] = choice

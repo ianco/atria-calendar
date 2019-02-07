@@ -403,6 +403,8 @@ def send_proof_request(wallet, config, connection_data, partner_name, proof_uuid
         # create a proof request
         proof = run_coroutine_with_kwargs(Proof.create, proof_uuid, proof_name, json.loads(proof_attrs), {}, requested_predicates=json.loads(proof_predicates))
 
+        proof_data = run_coroutine(proof.serialize)
+
         run_coroutine_with_args(proof.request_proof, my_connection)
 
         # serialize/deserialize credential - waiting for Alice to rspond with Credential Request

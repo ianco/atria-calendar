@@ -800,13 +800,21 @@ def handle_select_proof_request(request):
             connections = VcxConnection.objects.filter(id=connection_id).all()
             connection = connections[0]
             connection_data = json.loads(connection.connection_data)
+            institution_did = connection_data['data']['public_did']
+
+            proof_req_attrs = proof_request.proof_req_attrs
+            proof_req_predicates = proof_request.proof_req_predicates
+
+            # selective attribute substitutions
+            proof_req_attrs = proof_req_attrs.replace('$ISSUER_DID', institution_did)
+            proof_req_predicates = proof_req_predicates.replace('$ISSUER_DID', institution_did)
 
             proof_form = SendProofRequestForm(initial={
                     'wallet_name': connection.wallet_name,
                     'connection_id': connection_id,
                     'proof_name': proof_request.proof_req_name,
-                    'proof_attrs': proof_request.proof_req_attrs,
-                    'proof_predicates': proof_request.proof_req_predicates})
+                    'proof_attrs': proof_req_attrs,
+                    'proof_predicates': proof_req_predicates})
 
             return render(request, 'indy/send_proof_request.html', {'form': proof_form})
 

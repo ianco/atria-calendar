@@ -400,7 +400,7 @@
     "fields": {
         "proof_req_name": "Proof of Age",
         "proof_req_description": "Proof that the bearer is over a certain age, based on a \"birth date\" credential from a trusted issuer",
-        "proof_req_attrs": "[{\"name\": \"first_name\", \"restrictions\": [{{\"issuer_did\": \"$ISSUER_DID\"}}]}, {\"name\": \"last_name\", \"restrictions\": [{{\"issuer_did\": \"$ISSUER_DID\"}}]}]",
+        "proof_req_attrs": "[{\"name\": \"first_name\", \"restrictions\": [{\"issuer_did\": \"$ISSUER_DID\"}]}, {\"name\": \"last_name\", \"restrictions\": [{\"issuer_did\": \"$ISSUER_DID\"}]}]",
         "proof_req_predicates": "[{\"name\": \"age\",\"p_type\": \">=\",\"p_value\": $AGE}]"
     }
 }

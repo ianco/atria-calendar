@@ -155,7 +155,11 @@ class SelectProofReqClaimsForm(SendProofReqResponseForm):
                 field_name = 'proof_req_attr_' + attr
                 choices = []
                 claim_no = 0
-                for claim in field_attrs[0]['attrs'][attr]:
-                    choices.append((claim_no, json.dumps(claim)))
-                    claim_no = claim_no + 1
-                self.fields[field_name] = forms.ChoiceField(label='Select claim for '+attr, choices=tuple(choices), widget=forms.RadioSelect())
+                if 0 < len(field_attrs[0]['attrs'][attr]):
+                    for claim in field_attrs[0]['attrs'][attr]:
+                        choices.append((claim_no, json.dumps(claim)))
+                        claim_no = claim_no + 1
+                    self.fields[field_name] = forms.ChoiceField(label='Select claim for '+attr, choices=tuple(choices), widget=forms.RadioSelect())
+                else:
+                    self.fields[field_name] = forms.CharField(label='No claims available for '+attr+', enter value:', max_length=80)
+

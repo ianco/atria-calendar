@@ -80,9 +80,9 @@ class SelectCredentialOfferForm(WalletNameForm):
 class SendCredentialOfferForm(WalletNameForm):
     connection_id = forms.IntegerField(label="Connection Id")
     credential_tag = forms.CharField(label='Credential Tag', max_length=40)
+    credential_name = forms.CharField(label='Credential Name', max_length=40)
     cred_def = forms.CharField(label='Cred Def', max_length=80)
     schema_attrs = forms.CharField(label='Credential Attrs', max_length=4000, widget=forms.Textarea)
-    credential_name = forms.CharField(label='Credential Name', max_length=40)
 
     def __init__(self, *args, **kwargs):
         super(SendCredentialOfferForm, self).__init__(*args, **kwargs)
@@ -108,10 +108,20 @@ class SendCredentialResponseForm(SendConversationResponseForm):
         self.fields['libindy_offer_schema_id'].widget.attrs['readonly'] = True
 
 
+class SelectProofRequestForm(WalletNameForm):
+    connection_id = forms.IntegerField(label="Connection Id")
+    proof_request = forms.ModelChoiceField(label='Proof Request Type', queryset=IndyProofRequest.objects.all())
+
+    def __init__(self, *args, **kwargs):
+        super(SelectProofRequestForm, self).__init__(*args, **kwargs)
+        self.fields['wallet_name'].widget.attrs['readonly'] = True
+        self.fields['connection_id'].widget.attrs['readonly'] = True
+
+
 class SendProofRequestForm(WalletNameForm):
     connection_id = forms.IntegerField(label="Connection Id")
-    proof_uuid = forms.CharField(label='Proof UUID', max_length=40)
     proof_name = forms.CharField(label='Proof Name', max_length=40)
+    proof_uuid = forms.CharField(label='Proof UUID', max_length=40)
     proof_attrs = forms.CharField(label='Proof Attributes', max_length=4000, widget=forms.Textarea)
     proof_predicates = forms.CharField(label='Proof Predicates', max_length=4000, widget=forms.Textarea)
 

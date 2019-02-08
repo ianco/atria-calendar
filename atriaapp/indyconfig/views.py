@@ -787,7 +787,42 @@ def poll_conversation_status(request):
     return render(request, 'indy/check_conversation.html', {'form': form})
 
 
-def handle_proof_request(request):
+def handle_select_proof_request(request):
+    if request.method=='POST':
+        form = SelectProofRequestForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+
+            #now in the object cd, you have the form as a dictionary.
+            proof_request = cd.get('proof_request')
+            connection_id = cd.get('connection_id')
+
+            connections = VcxConnection.objects.filter(id=connection_id).all()
+            connection = connections[0]
+            connection_data = json.loads(connection.connection_data)
+
+            proof_form = SendProofRequestForm(initial={
+                    'wallet_name': connection.wallet_name,
+                    'connection_id': connection_id,
+                    'proof_name': proof_request.proof_req_name,
+                    'proof_attrs': proof_request.proof_req_attrs,
+                    'proof_predicates': proof_request.proof_req_predicates})
+
+            return render(request, 'indy/send_proof_request.html', {'form': proof_form})
+
+    else:
+        # find conversation request
+        connection_id = request.GET.get('connection_id', None)
+        connections = VcxConnection.objects.filter(id=connection_id).all()
+        connection = connections[0]
+        connection_data = json.loads(connection.connection_data)
+        form = SelectProofRequestForm(initial={ 'connection_id': connection_id,
+                                                'wallet_name': connection.wallet_name })
+
+    return render(request, 'indy/select_proof_request.html', {'form': form})
+
+
+def handle_send_proof_request(request):
     if request.method=='POST':
         form = SendProofRequestForm(request.POST)
         if form.is_valid():
@@ -851,56 +886,7 @@ def handle_proof_request(request):
                 return render(request, 'indy/form_response.html', {'msg': 'Failed to update conversation for ' + wallet_name})
 
     else:
-        # find conversation request
-        connection_id = request.GET.get('connection_id', None)
-        connections = VcxConnection.objects.filter(id=connection_id).all()
-        connection = connections[0]
-        connection_data = json.loads(connection.connection_data)
-        institution_did = connection_data['data']['public_did']
-
-        # requested_attrs: Describes requested attribute
-        #     {
-        #         "name": string, // attribute name, (case insensitive and ignore spaces)
-        #         "restrictions":  (filter_json) {
-        #            "schema_id": string, (Optional)
-        #            "schema_issuer_did": string, (Optional)
-        #            "schema_name": string, (Optional)
-        #            "schema_version": string, (Optional)
-        #            "issuer_did": string, (Optional)
-        #            "cred_def_id": string, (Optional)
-        #        },
-        #         "non_revoked": {
-        #             "from": Optional<(u64)> Requested time represented as a total number of seconds from Unix Epoch, Optional
-        #             "to": Optional<(u64)>
-        #                 //Requested time represented as a total number of seconds from Unix Epoch, Optional
-        #         }
-        #     }
-
-        # requested_predicates: predicate specifications prover must provide claim for
-        #          { // set of requested predicates
-        #             "name": attribute name, (case insensitive and ignore spaces)
-        #             "p_type": predicate type (Currently ">=" only)
-        #             "p_value": int predicate value
-        #             "restrictions": Optional<filter_json>, // see above
-        #             "non_revoked": Optional<{
-        #                 "from": Optional<(u64)> Requested time represented as a total number of seconds from Unix Epoch, Optional
-        #                 "to": Optional<(u64)> Requested time represented as a total number of seconds from Unix Epoch, Optional
-        #             }>
-        #          },
-
-        proof_attrs = [
-            {'name': 'name', 'restrictions': [{'issuer_did': institution_did}]},
-            {'name': 'date', 'restrictions': [{'issuer_did': institution_did}]},
-            {'name': 'degree', 'restrictions': [{'issuer_did': institution_did}]}
-        ]
-        proof_predicates = []
-        # TODO validate connection id
-        form = SendProofRequestForm(initial={ 'connection_id': connection_id,
-                                              'wallet_name': connection.wallet_name,
-                                              'proof_attrs': json.dumps(proof_attrs),
-                                              'proof_predicates': json.dumps(proof_predicates) })
-
-    return render(request, 'indy/proof_request.html', {'form': form})
+        return render(request, 'indy/form_response.html', {'msg': 'Method not allowed'})
 
 
 def handle_view_proof(request):

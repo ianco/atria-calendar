@@ -371,7 +371,7 @@
         "proof_req_name": "Alice Faber Demo Proof",
         "proof_req_description": "This is the proof request in the VCX Alice/Faber python demo in the Indy SDK.",
         "proof_req_attrs": "[{\"name\": \"name\", \"restrictions\": [{\"issuer_did\": \"$ISSUER_DID\"}]}, {\"name\": \"date\", \"restrictions\": [{\"issuer_did\": \"$ISSUER_DID\"}]}, {\"name\": \"degree\", \"restrictions\": [{\"issuer_did\": \"$ISSUER_DID\"}]}]",
-        "proof_req_predicates": ""
+        "proof_req_predicates": "[]"
     }
 },
 {
@@ -381,7 +381,7 @@
         "proof_req_name": "Proof of Education",
         "proof_req_description": "Proof of education, based on the default Transcript schema",
         "proof_req_attrs": "[{\"name\": \"first_name\", \"restrictions\": []}, {\"name\": \"last_name\", \"restrictions\": []}, {\"name\": \"degree\", \"restrictions\": [{\"schema_name\": \"Transcript\"}]}, {\"name\": \"ssn\", \"restrictions\": [{\"schema_name\": \"Transcript\"}]}]",
-        "proof_req_predicates": ""
+        "proof_req_predicates": "[]"
     }
 },
 {
@@ -391,7 +391,7 @@
         "proof_req_name": "Proof of Employment",
         "proof_req_description": "Proof of employment/income based on the default Job-Certificate schema",
         "proof_req_attrs": "[{\"name\": \"first_name\", \"restrictions\": []}, {\"name\": \"last_name\", \"restrictions\": []}, {\"name\": \"employee_status\", \"restrictions\": [{\"schema_name\": \"Job-Certificate\"}]}, {\"name\": \"ssn\", \"restrictions\": [{\"schema_name\": \"Job-Certificate\"}]}]",
-        "proof_req_predicates": ""
+        "proof_req_predicates": "[]"
     }
 },
 {

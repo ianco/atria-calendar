@@ -191,3 +191,11 @@ To re-start the environment, just go to step #1 of the previous section.
 6. As an Issuing organization, request a Proof from an end user
 
 
+Navigate to http://localhost:8000/, or http://localhost:8000/admin and login as the admin user (admin@mail.com/pass1234).
+
+
+
+## Connecting to the Sovrin Test Network (STN)
+
+For a connection from VerityUI to the enterprise agency, (https://eas01.pps.evernym.com 4), the pool that should be connected to is the STN (Sovrin Test Network). The genesis file is in Github, but that seems to be down this morning. If you ping me in sovin slack I’ll put it in there.
+

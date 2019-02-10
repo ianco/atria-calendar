@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.http import JsonResponse
 
 from rest_framework.authentication import BasicAuthentication, SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -9,6 +10,7 @@ from rest_framework import status
 
 import asyncio
 import json
+import uuid
 
 from .indyutils import *
 from .indyauth import *
@@ -135,6 +137,8 @@ def handle_connection_request(request):
                 my_connection = VcxConnection(
                     wallet_name = wallet,
                     partner_name = partner_name,
+                    invitation = json.dumps(invite_data),
+                    token = str(uuid.uuid4()),
                     connection_type = 'Outbound',
                     connection_data = json.dumps(connection_data),
                     status = 'Sent')
@@ -153,7 +157,7 @@ def handle_connection_request(request):
 
                 handle_wallet_login_internal(request, wallet_name, raw_password)
 
-                return render(request, 'indy/form_response.html', {'msg': 'Updated connection for ' + wallet_name, 'msg_txt': json.dumps(invite_data)})
+                return render(request, 'indy/form_response.html', {'msg': 'Updated connection for ' + wallet_name, 'msg_txt': json.dumps(invite_data), 'msg_txt2': my_connection.token })
             except IndyError:
                 # ignore errors for now
                 print(" >>> Failed to create request for", wallet_name)
@@ -928,14 +932,20 @@ def list_wallet_credentials(request):
 ###########################################
 # API views to support REST services
 ###########################################
+def get_invitation_text(request, token):
+    connection = VcxConnection.objects.filter(token=token).first()
+    invitation = json.loads(connection.invitation)
+    return JsonResponse(invitation)
+
 class VcxConnectionView(APIView):
     authentication_classes = (IndyRestAuthentication,)
     permission_classes = (IsAuthenticated,)
 
     def get(self, request):
         # TODO filter by wallet_name, which will be in the basic auth header
-        wallet = request.user.wallet_name
-        connections = VcxConnection.objects.filter(wallet_name=wallet).all()
+        #wallet = request.user.wallet_name
+        #connections = VcxConnection.objects.filter(wallet_name=wallet).all()
+        connections = VcxConnection.objects.all()
         # the many param informs the serializer that it will be serializing more than a single article.
         serializer = VcxConnectionSerializer(connections, many=True)
         return Response({"connections": serializer.data})

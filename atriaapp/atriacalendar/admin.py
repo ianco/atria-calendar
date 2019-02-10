@@ -83,16 +83,16 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                 creddef = create_creddef(wallet, json.loads(config), schema, 'creddef_' + wallet_name, creddef_template)
 
                 # create cred defs for the "default" schemas
-                schemas = IndySchema.objects.filter(schema_name='Transcript', schema_version='1.2').all()
+                schemas = IndySchema.objects.filter(schema_name='Transcript').all()
                 schema = schemas[0]
                 creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
-                schemas = IndySchema.objects.filter(schema_name='Job-Certificate', schema_version='0.2').all()
+                schemas = IndySchema.objects.filter(schema_name='Job-Certificate').all()
                 schema = schemas[0]
                 creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
             else:
                 # create some "default" schemas for use by everyone
                 # education transcript (proof of education)
-                (schema_json, creddef_template) = create_schema_json('Transcript', '1.2', [
+                (schema_json, creddef_template) = create_schema_json('Transcript', random_schema_version(), [
                     'first_name', 
                     'last_name', 
                     'degree', 
@@ -103,7 +103,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                     ])
                 schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
                 # job transcript (proof of income)
-                (schema_json, creddef_template) = create_schema_json('Job-Certificate', '0.2', [
+                (schema_json, creddef_template) = create_schema_json('Job-Certificate', random_schema_version(), [
                     'first_name', 
                     'last_name', 
                     'ssn', 
@@ -113,7 +113,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                     ])
                 schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
                 # driver license (proof of age or address)
-                (schema_json, creddef_template) = create_schema_json('Driver-License', '0.9', [
+                (schema_json, creddef_template) = create_schema_json('Driver-License', random_schema_version(), [
                     'last_name', 
                     'first_name', 
                     'middle_name', 
@@ -131,7 +131,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                     ])
                 schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
                 # passport (proof of age or citizenship)
-                (schema_json, creddef_template) = create_schema_json('Passport', '0.9', [
+                (schema_json, creddef_template) = create_schema_json('Passport', random_schema_version(), [
                     'last_name', 
                     'first_name', 
                     'middle_name', 
@@ -148,10 +148,10 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                 schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
 
                 # Trustee can issue Passport and Driver License
-                schemas = IndySchema.objects.filter(schema_name='Driver-License', schema_version='0.9').all()
+                schemas = IndySchema.objects.filter(schema_name='Driver-License').all()
                 schema = schemas[0]
                 creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
-                schemas = IndySchema.objects.filter(schema_name='Passport', schema_version='0.9').all()
+                schemas = IndySchema.objects.filter(schema_name='Passport').all()
                 schema = schemas[0]
                 creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
 

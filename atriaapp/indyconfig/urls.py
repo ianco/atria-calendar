@@ -33,6 +33,7 @@ urlpatterns = [
     path('wallet_logout/', handle_wallet_logout, name='wallet_logout'),
 
     path('connections/', VcxConnectionView.as_view()),
+    path('invitation/<token>/', get_invitation_text, name='invitation'),
 #    url(r'^$', schema_view),
 ]
 

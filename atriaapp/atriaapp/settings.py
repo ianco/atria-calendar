@@ -21,7 +21,7 @@ SECRET_KEY = '51m=o=g9accsu3#q2=1ks@(0k2j_1#k%*o(unlr8fldv_(&%6v'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -68,6 +68,7 @@ INDY_CONFIG = {
     'vcx_genesis_path': '/tmp/atria-genesis.txt',
     'register_dids': True,
     'ledger_url': 'http://localhost:9000',
+    'vcx_genesis_url': 'http://localhost:9000/genesis',
 }
 
 REST_FRAMEWORK = {

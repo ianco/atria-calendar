@@ -62,6 +62,7 @@ class VcxConnection(models.Model):
     wallet_name = models.ForeignKey(IndyWallet, to_field="wallet_name", on_delete=models.CASCADE)
     partner_name = models.CharField(max_length=30)
     invitation = models.TextField(max_length=4000, blank=True)
+    token = models.CharField(max_length=80, blank=True)
     status = models.CharField(max_length=20)
     connection_type = models.CharField(max_length=20)
     connection_data = models.TextField(max_length=4000, blank=True)

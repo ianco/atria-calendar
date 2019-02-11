@@ -68,7 +68,11 @@ INDY_CONFIG = {
     'vcx_genesis_path': '/tmp/atria-genesis.txt',
     'register_dids': True,
     'ledger_url': 'http://localhost:9000',
-    'vcx_genesis_url': 'http://localhost:9000/genesis',
+    # local indy ledger
+    #'vcx_genesis_url': 'http://localhost:9000/genesis',
+    # bcovrin ledger for dflow demo
+    #'ledger_url': 'http://dflow.bcovrin.vonx.io',
+    #'vcx_genesis_url': 'http://dflow.bcovrin.vonx.io/genesis',
 }
 
 REST_FRAMEWORK = {

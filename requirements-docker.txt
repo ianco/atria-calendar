@@ -1,0 +1,1 @@
+file:///home/indy/indy-sdk/indy-sdk-3551e7b60f5d3670194d5fdfccec7781730efd10/vcx/wrappers/python3#egg=python3-wrapper-vcx

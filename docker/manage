@@ -1,2 +1,19 @@
-docker build -f Dockerfile.ubuntu -t atria:indy-base ..
+
+
+# start indy nodes
+docker build -f ci/indy-pool.dockerfile -t indy_pool .
+docker run -itd -p 9701-9708:9701-9708 indy_pool
+
+... or use von-network
+
+
+# start postgres db
+docker run --name some-postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432:5432 postgres -c 'log_statement=all' -c 'logging_collector=on' -c 'log_destination=stderr'
+
+
+# run dummy-cloud-agent
+cargo run sample-config.json
+
+
+# build image for Atria app - run django app and background tasks
 

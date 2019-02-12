@@ -4,8 +4,8 @@ django-swingtime>=0.9.0
 -e git+https://github.com/deschler/django-modeltranslation.git#egg=django-modeltranslation
 django-heroku
 python3-indy
+# note include this in a "requirements-extra.txt" file until the indy-sdk has been updated
 #python3-wrapper-vcx
-file:///Users/icostanzo/Projects/indy-sdk/vcx/wrappers/python3#egg=python3-wrapper-vcx
 django-extensions
 djangorestframework
 markdown

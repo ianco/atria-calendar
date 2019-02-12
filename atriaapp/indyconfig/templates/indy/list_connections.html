@@ -22,9 +22,10 @@
           {% if connection.connection_type == 'Outbound' %}
             <a href={% url 'indyconfig:select_credential_offer' %}?connection_id={{connection.id}}>Send Credential</a> 
             or 
-            <a href={% url 'indyconfig:select_proof_request' %}?connection_id={{connection.id}}>Send Proof Request</a>
           {% endif %}
+          <a href={% url 'indyconfig:select_proof_request' %}?connection_id={{connection.id}}>Send Proof Request</a>
           {% if connection.connection_type == 'Inbound' %}
+            or
             <a href={% url 'indyconfig:check_messages' %}?connection_id={{connection.id}}>Poll for Messages</a>
           {% endif %}
         {% endif %}

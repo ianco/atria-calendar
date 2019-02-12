@@ -64,32 +64,8 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
             wallet.vcx_config = config
             wallet.save()
 
-            # TODO temporary measure - create a schema and cred def and register on the ledger
-            if org_role != 'Trustee':
-                trustees = AtriaOrganization.objects.filter(org_role='Trustee').all()
-                if 0 < len(trustees):
-                    trustee = trustees[0]
-                    trustee_wallet = trustee.wallet_name
-                    trustee_config = trustee_wallet.vcx_config
-                else:
-                    # if there is no Trustee available just use the current org
-                    trustee_config = config
-                
-                # create a "dummy" schema/cred-def that is unique to this org (matches the Alice/Faber demo schema)
-                (schema_json, creddef_template) = create_schema_json('schema_' + wallet_name, random_schema_version(), [
-                    'name', 'date', 'degree', 'age',
-                    ])
-                schema = create_schema(wallet, json.loads(trustee_config), schema_json, creddef_template)
-                creddef = create_creddef(wallet, json.loads(config), schema, 'creddef_' + wallet_name, creddef_template)
-
-                # create cred defs for the "default" schemas
-                schemas = IndySchema.objects.filter(schema_name='Transcript').all()
-                schema = schemas[0]
-                creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
-                schemas = IndySchema.objects.filter(schema_name='Job-Certificate').all()
-                schema = schemas[0]
-                creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
-            else:
+            # TODO temporary measure - create schema(s) and cred def(s) and register on the ledger
+            if org_role == 'Trustee':
                 # create some "default" schemas for use by everyone
                 # education transcript (proof of education)
                 (schema_json, creddef_template) = create_schema_json('Transcript', random_schema_version(), [
@@ -152,6 +128,134 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                 schema = schemas[0]
                 creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
                 schemas = IndySchema.objects.filter(schema_name='Passport').all()
+                schema = schemas[0]
+                creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
+
+                # schemas for the MYco business processes
+                # Health Certificate Credential
+                (schema_json, creddef_template) = create_schema_json('Health-Certificate', random_schema_version(), [
+                    'myco_id', 
+                    'level', 
+                    'name', 
+                    'short_name', 
+                    'type', 
+                    'category', 
+                    'superclass', 
+                    'output_type', 
+                    'ref_unit', 
+                    'ref_unit_timestamp',
+                    'range', 
+                    'concentration', 
+                    'unit',
+                    ])
+                schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
+                # Research Project Credential
+                (schema_json, creddef_template) = create_schema_json('Research-Project', random_schema_version(), [
+                    'project_name', 
+                    'PI_last_name', 
+                    'PI_first_name', 
+                    'institutional_affiliation',
+                    'project_description', 
+                    'myco_id', 
+                    'level', 
+                    'name', 
+                    'short_name', 
+                    'type', 
+                    'category', 
+                    'superclass', 
+                    'output_type', 
+                    'range', 
+                    ])
+                schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
+                # Consent Credential
+                (schema_json, creddef_template) = create_schema_json('Consent', random_schema_version(), [
+                    'jurisdiction', 
+                    'iat', 
+                    'moc', 
+                    'iss', 
+                    'jti', 
+                    'sub', 
+                    'data_controller', #{This is an object containing the following array of strings: "on_behalf": true, "contact": "Dave Controller", "company": "Data Controller Inc.", "address": "123 St., Place", "email": "dave@datacontroller.com", "phone": "00-123-341-2351"}, 
+                    'policy_url', 
+                    'purpose', 
+                    'sensitive', 
+                    'sharing', #{This is an object containing the following array of strings: “party_name”: "3rd Party Name or/3rd Party Category"}, 
+                    'notice', 
+                    'scopes', 
+                    ])
+                schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
+
+                # standard proofs for the MYco business processes
+                # Proof of Ethics (to perform research)
+                create_proof_request('Proof of Ethics', 'Proof that a Researcher has been audited and is certified to follow the terms of their research study',
+                    [{'name':'project_name', 'restrictions':[{'issuer_did': '$IRB_DID'}]},
+                     {'name':'myco_id', 'restrictions':[{'issuer_did': '$IRB_DID'}]},
+                     {'name':'level', 'restrictions':[{'issuer_did': '$IRB_DID'}]}, 
+                     {'name':'name', 'restrictions':[{'issuer_did': '$IRB_DID'}]}],
+                    [{'name': 'type','p_type': '>=','p_value': '$VALUE'}]
+                    )
+                # Proof of Suitability (to participate in study)
+                create_proof_request('Proof of Suitability', 'Proof that a MYco Client is suitable according to the terms of the study',
+                    [{'name':'short_name', 'restrictions':[{'issuer_did': '$MYCO_DID'}]},
+                     {'name':'myco_id', 'restrictions':[{'issuer_did': '$MYCO_DID'}]}],
+                    [{'name': 'type','p_type': '>=','p_value': '$VALUE'},
+                     {'name': 'category','p_type': '>=','p_value': '$VALUE'},
+                     {'name': 'superclass','p_type': '>=','p_value': '$VALUE'}]
+                    )
+                # Proof of Consent (to use data for study)
+                create_proof_request('Proof of Consent', 'Proof that a MYco Client has consented to participate in study',
+                    [{'name':'data_controller', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
+                     {'name':'policy_url', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
+                     {'name':'sensitive', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
+                     {'name':'sharing', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]}],
+                    []
+                    )
+
+            elif org_role == 'MYco':
+                # cred def to issue Health Certificate Credential
+                schemas = IndySchema.objects.filter(schema_name='Health-Certificate').all()
+                schema = schemas[0]
+                creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
+
+            #elif org_role == 'Client':  # TODO - this is really not an "org"
+                # TBD - receives Health Certificate, issues Consent Credential (?)
+                # not an org, will be an Individual
+
+            elif org_role == 'IRB':
+                # cred def to issue Research Project Credential
+                schemas = IndySchema.objects.filter(schema_name='Research-Project').all()
+                schema = schemas[0]
+                creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
+
+            elif org_role == 'Researcher':  # TODO
+                # receives credentials and provides proofs; not sure if they are an issuer
+                # TODO for now add a cred def to issue a Consent Credential to MYco Client (?)
+                schemas = IndySchema.objects.filter(schema_name='Consent').all()
+                schema = schemas[0]
+                creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
+
+            else:
+                trustees = AtriaOrganization.objects.filter(org_role='Trustee').all()
+                if 0 < len(trustees):
+                    trustee = trustees[0]
+                    trustee_wallet = trustee.wallet_name
+                    trustee_config = trustee_wallet.vcx_config
+                else:
+                    # if there is no Trustee available just use the current org
+                    trustee_config = config
+                
+                # create a "dummy" schema/cred-def that is unique to this org (matches the Alice/Faber demo schema)
+                (schema_json, creddef_template) = create_schema_json('schema_' + wallet_name, random_schema_version(), [
+                    'name', 'date', 'degree', 'age',
+                    ])
+                schema = create_schema(wallet, json.loads(trustee_config), schema_json, creddef_template)
+                creddef = create_creddef(wallet, json.loads(config), schema, 'creddef_' + wallet_name, creddef_template)
+
+                # create cred defs for the "default" schemas
+                schemas = IndySchema.objects.filter(schema_name='Transcript').all()
+                schema = schemas[0]
+                creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
+                schemas = IndySchema.objects.filter(schema_name='Job-Certificate').all()
                 schema = schemas[0]
                 creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
 

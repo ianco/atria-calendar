@@ -318,6 +318,18 @@ def create_creddef(wallet, config, indy_schema, creddef_name, creddef_template):
     return indy_creddef
 
 
+def create_proof_request(name, description, attrs, predicates):
+    proof_req_attrs = json.dumps(attrs)
+    proof_req_predicates = json.dumps(predicates)
+    proof_request = IndyProofRequest(
+                            proof_req_name = name,
+                            proof_req_description = description,
+                            proof_req_attrs = proof_req_attrs,
+                            proof_req_predicates = proof_req_predicates
+                            )
+    proof_request.save()
+
+
 def send_credential_offer(wallet, config, connection_data, partner_name, credential_tag, schema_attrs, cred_def, credential_name):
     print(" >>> Initialize libvcx with new configuration for a cred offer to", partner_name)
     try:
@@ -510,24 +522,25 @@ def handle_inbound_messages(my_wallet, config, my_connection):
         connection_data = json.loads(my_connection.connection_data)
         connection_to_ = run_coroutine_with_args(Connection.deserialize, connection_data)
 
-        print("Check for and receive offers")
-        offers = run_coroutine_with_args(Credential.get_offers, connection_to_)
-        for offer in offers:
-            already_handled = VcxConversation.objects.filter(message_id=offer[0]['msg_ref_id']).all()
-            if len(already_handled) == 0:
-                save_offer = offer[0].copy()
-                offer_data = json.dumps(save_offer)
-                new_offer = VcxConversation(
-                                    wallet_name = my_wallet,
-                                    connection_partner_name = my_connection.partner_name,
-                                    conversation_type = "CredentialOffer",
-                                    message_id = save_offer['msg_ref_id'],
-                                    status = 'Pending',
-                                    conversation_data = offer_data
-                                )
-                print("Saving received offer to DB")
-                new_offer.save()
-                handled_count = handled_count + 1
+        if my_connection.connection_type == 'Inbound':
+            print("Check for and receive offers")
+            offers = run_coroutine_with_args(Credential.get_offers, connection_to_)
+            for offer in offers:
+                already_handled = VcxConversation.objects.filter(message_id=offer[0]['msg_ref_id']).all()
+                if len(already_handled) == 0:
+                    save_offer = offer[0].copy()
+                    offer_data = json.dumps(save_offer)
+                    new_offer = VcxConversation(
+                                        wallet_name = my_wallet,
+                                        connection_partner_name = my_connection.partner_name,
+                                        conversation_type = "CredentialOffer",
+                                        message_id = save_offer['msg_ref_id'],
+                                        status = 'Pending',
+                                        conversation_data = offer_data
+                                    )
+                    print("Saving received offer to DB")
+                    new_offer.save()
+                    handled_count = handled_count + 1
 
         print("Check for and handle proof requests")
         requests = run_coroutine_with_args(DisclosedProof.get_requests, connection_to_)

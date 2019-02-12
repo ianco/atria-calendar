@@ -233,7 +233,7 @@ def signup_view(request):
             wallet.save()
             print(" >>> created wallet", wallet_name)
 
-            # need to auto-login with Atria custom user
+            # TODO need to auto-login with Atria custom user
             #login(request, user)
 
             return redirect('calendar_home')

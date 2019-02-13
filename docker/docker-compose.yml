@@ -1,0 +1,69 @@
+version: '3'
+services:
+  # 
+  # atria-django
+  # 
+  atria-django:
+    image: atria:indy-base
+    networks:
+      - atria
+      - von
+    ports:
+      - 8000:8000
+    volumes:
+      - "..:/home/indy/atria"
+    depends_on:
+      - dummy-cloud-agent
+      - wallet-db
+    command: >
+        /bin/bash -c "
+        echo waiting for dependencies ...;
+        sleep 5;
+        cd atria/atriaapp;
+        touch db.sqlite3;
+        DJANGO_SETTINGS_MODULE=atriaapp.docker_settings ./reload_db.sh;
+        DJANGO_SETTINGS_MODULE=atriaapp.docker_settings python manage.py runserver 0.0.0.0:8000;"
+
+  # 
+  # dummy-cloud-agent
+  #
+  dummy-cloud-agent:
+    image: atria:indy-base
+    networks:
+      - atria
+      - von
+    ports:
+      - 8080:8080
+      - 8081:8081
+    volumes:
+      - "..:/home/indy/atria"
+    command: 
+      indy-dummy-agent atria/dummy-cloud-agent/docker-config.json
+
+  # 
+  # wallet-db
+  # 
+  wallet-db:
+    image: postgresql
+    environment:
+      - POSTGRESQL_USER=${POSTGRESQL_USER}
+      - POSTGRESQL_PASSWORD=${POSTGRESQL_PASSWORD}
+      - POSTGRESQL_DATABASE=${POSTGRESQL_DATABASE}
+      - POSTGRESQL_ADMIN_PASSWORD=${POSTGRESQL_ADMIN_PASSWORD}
+    networks:
+      - atria
+    ports:
+      - 5432:5432
+    volumes:
+      - atria-wallet-db:/var/lib/pgsql/data     
+    #command:
+    #  postgres -c 'log_statement=all' -c 'logging_collector=on' -c 'log_destination=stderr'
+
+networks:
+  atria:
+  von:
+    external:
+      name: von_von
+
+volumes:
+  atria-wallet-db:

@@ -133,7 +133,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
 
                 # schemas for the MYco business processes
                 # Health Certificate Credential
-                (schema_json, creddef_template) = create_schema_json('Health-Certificate', random_schema_version(), [
+                (schema_json, creddef_template) = create_schema_json('MYco Health-Certificate', random_schema_version(), [
                     'myco_id', 
                     'level', 
                     'name', 
@@ -150,7 +150,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                     ])
                 schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
                 # Research Project Credential
-                (schema_json, creddef_template) = create_schema_json('Research-Project', random_schema_version(), [
+                (schema_json, creddef_template) = create_schema_json('MYco Research-Project', random_schema_version(), [
                     'project_name', 
                     'PI_last_name', 
                     'PI_first_name', 
@@ -168,7 +168,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                     ])
                 schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
                 # Consent Credential
-                (schema_json, creddef_template) = create_schema_json('Consent', random_schema_version(), [
+                (schema_json, creddef_template) = create_schema_json('MYco Consent Enablement', random_schema_version(), [
                     'jurisdiction', 
                     'iat', 
                     'moc', 
@@ -187,7 +187,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
 
                 # standard proofs for the MYco business processes
                 # Proof of Ethics (to perform research)
-                create_proof_request('Proof of Ethics', 'Proof that a Researcher has been audited and is certified to follow the terms of their research study',
+                create_proof_request('MYco Proof of Ethics', 'Proof that a Researcher has been audited and is certified to follow the terms of their research study',
                     [{'name':'project_name', 'restrictions':[{'issuer_did': '$IRB_DID'}]},
                      {'name':'myco_id', 'restrictions':[{'issuer_did': '$IRB_DID'}]},
                      {'name':'level', 'restrictions':[{'issuer_did': '$IRB_DID'}]}, 
@@ -195,7 +195,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                     [{'name': 'type','p_type': '>=','p_value': '$VALUE'}]
                     )
                 # Proof of Suitability (to participate in study)
-                create_proof_request('Proof of Suitability', 'Proof that a MYco Client is suitable according to the terms of the study',
+                create_proof_request('MYco Proof of Suitability', 'Proof that a MYco Client is suitable according to the terms of the study',
                     [{'name':'short_name', 'restrictions':[{'issuer_did': '$MYCO_DID'}]},
                      {'name':'myco_id', 'restrictions':[{'issuer_did': '$MYCO_DID'}]}],
                     [{'name': 'type','p_type': '>=','p_value': '$VALUE'},
@@ -203,7 +203,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                      {'name': 'superclass','p_type': '>=','p_value': '$VALUE'}]
                     )
                 # Proof of Consent (to use data for study)
-                create_proof_request('Proof of Consent', 'Proof that a MYco Client has consented to participate in study',
+                create_proof_request('MYco Proof of Consent', 'Proof that a MYco Client has consented to participate in study',
                     [{'name':'data_controller', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
                      {'name':'policy_url', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
                      {'name':'sensitive', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
@@ -213,7 +213,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
 
             elif org_role == 'MYco':
                 # cred def to issue Health Certificate Credential
-                schemas = IndySchema.objects.filter(schema_name='Health-Certificate').all()
+                schemas = IndySchema.objects.filter(schema_name='MYco Health-Certificate').all()
                 schema = schemas[0]
                 creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
 
@@ -223,14 +223,14 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
 
             elif org_role == 'IRB':
                 # cred def to issue Research Project Credential
-                schemas = IndySchema.objects.filter(schema_name='Research-Project').all()
+                schemas = IndySchema.objects.filter(schema_name='MYco Research-Project').all()
                 schema = schemas[0]
                 creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
 
             elif org_role == 'Researcher':  # TODO
                 # receives credentials and provides proofs; not sure if they are an issuer
                 # TODO for now add a cred def to issue a Consent Credential to MYco Client (?)
-                schemas = IndySchema.objects.filter(schema_name='Consent').all()
+                schemas = IndySchema.objects.filter(schema_name='MYco Consent Enablement').all()
                 schema = schemas[0]
                 creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
 

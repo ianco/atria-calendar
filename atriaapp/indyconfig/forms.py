@@ -6,12 +6,12 @@ from .models import *
 
 # Indy-related forms
 class WalletLoginForm(forms.Form):
-    wallet_name = forms.CharField(label='Wallet Name', max_length=20)
-    raw_password = forms.CharField(label='Password', max_length=20, widget=forms.PasswordInput)
+    wallet_name = forms.CharField(label='Wallet Name', max_length=30)
+    raw_password = forms.CharField(label='Password', max_length=30, widget=forms.PasswordInput)
 
 
 class WalletNameForm(forms.Form):
-    wallet_name = forms.CharField(label='Wallet Name', max_length=20)
+    wallet_name = forms.CharField(label='Wallet Name', max_length=30)
 
     def __init__(self, *args, **kwargs):
         super(WalletNameForm, self).__init__(*args, **kwargs)
@@ -19,7 +19,7 @@ class WalletNameForm(forms.Form):
 
 
 class SendConnectionInvitationForm(WalletNameForm):
-    partner_name = forms.CharField(label='Partner Name', max_length=20)
+    partner_name = forms.CharField(label='Partner Name', max_length=30)
 
     def __init__(self, *args, **kwargs):
         super(SendConnectionInvitationForm, self).__init__(*args, **kwargs)
@@ -93,7 +93,7 @@ class SendCredentialOfferForm(WalletNameForm):
 
 class SendCredentialResponseForm(SendConversationResponseForm):
     # a bunch of fields that are read-only to present to the user
-    from_partner_name = forms.CharField(label='Partner Name', max_length=20)
+    from_partner_name = forms.CharField(label='Partner Name', max_length=30)
     claim_id = forms.CharField(label='Credential Id', max_length=40)
     claim_name = forms.CharField(label='Credential Name', max_length=40)
     credential_attrs = forms.CharField(label='Credential Attrs', max_length=4000, widget=forms.Textarea)
@@ -133,7 +133,7 @@ class SendProofRequestForm(WalletNameForm):
 
 class SendProofReqResponseForm(SendConversationResponseForm):
     # a bunch of fields that are read-only to present to the user
-    from_partner_name = forms.CharField(label='Partner Name', max_length=20)
+    from_partner_name = forms.CharField(label='Partner Name', max_length=30)
     proof_req_name = forms.CharField(label='Proof Request Name', max_length=40)
     requested_attrs = forms.CharField(label='Requested Attrs', max_length=4000, widget=forms.HiddenInput)
 

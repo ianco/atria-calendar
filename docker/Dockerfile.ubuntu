@@ -51,7 +51,7 @@ ARG pbc_lib_ver=0.5.14
 
 # Build and install pbc library
 RUN curl -o pbc-${pbc_lib_ver}.tar.gz \
-        "https://crypto.stanford.edu/pbc/files/pbc-${pbc_lib_ver}.tar.gz" && \
+        "https://mirrors.aliyun.com/macports/distfiles/pbc/pbc-${pbc_lib_ver}.tar.gz" && \
     tar xzvf pbc-${pbc_lib_ver}.tar.gz && \
     cd pbc-${pbc_lib_ver} && \
     ./configure && \

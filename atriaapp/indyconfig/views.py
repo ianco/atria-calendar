@@ -86,7 +86,9 @@ def handle_wallet_logout(request):
 def handle_connection_request(request):
     if request.method=='POST':
         form = SendConnectionInvitationForm(request.POST)
-        if form.is_valid():
+        if not form.is_valid():
+            return render(request, 'indy/form_response.html', {'msg': 'Form error', 'msg_txt': str(form.errors)})
+        else:
             # log out of current wallet, if any
             wallet_name = request.session['wallet_name']
             raw_password = request.session['wallet_password']
@@ -176,7 +178,9 @@ def handle_connection_request(request):
 def handle_connection_response(request):
     if request.method=='POST':
         form = SendConnectionResponseForm(request.POST)
-        if form.is_valid():
+        if not form.is_valid():
+            return render(request, 'indy/form_response.html', {'msg': 'Form error', 'msg_txt': str(form.errors)})
+        else:
             # log out of current wallet, if any
             wallet_name = request.session['wallet_name']
             raw_password = request.session['wallet_password']
@@ -259,7 +263,9 @@ def handle_connection_response(request):
 def poll_connection_status(request):
     if request.method=='POST':
         form = PollConnectionStatusForm(request.POST)
-        if form.is_valid():
+        if not form.is_valid():
+            return render(request, 'indy/form_response.html', {'msg': 'Form error', 'msg_txt': str(form.errors)})
+        else:
             # log out of current wallet, if any
             wallet_name = request.session['wallet_name']
             raw_password = request.session['wallet_password']
@@ -335,7 +341,9 @@ def list_connections(request):
 def check_connection_messages(request):
     if request.method=='POST':
         form = PollConnectionStatusForm(request.POST)
-        if form.is_valid():
+        if not form.is_valid():
+            return render(request, 'indy/form_response.html', {'msg': 'Form error', 'msg_txt': str(form.errors)})
+        else:
             # log out of current wallet, if any
             wallet_name = request.session['wallet_name']
             raw_password = request.session['wallet_password']
@@ -393,7 +401,9 @@ def list_conversations(request):
 def handle_select_credential_offer(request):
     if request.method=='POST':
         form = SelectCredentialOfferForm(request.POST)
-        if form.is_valid():
+        if not form.is_valid():
+            return render(request, 'indy/form_response.html', {'msg': 'Form error', 'msg_txt': str(form.errors)})
+        else:
             # log out of current wallet, if any
             wallet_name = request.session['wallet_name']
             raw_password = request.session['wallet_password']
@@ -430,7 +440,9 @@ def handle_select_credential_offer(request):
 def handle_credential_offer(request):
     if request.method=='POST':
         form = SendCredentialOfferForm(request.POST)
-        if form.is_valid():
+        if not form.is_valid():
+            return render(request, 'indy/form_response.html', {'msg': 'Form error', 'msg_txt': str(form.errors)})
+        else:
             # log out of current wallet, if any
             wallet_name = request.session['wallet_name']
             raw_password = request.session['wallet_password']
@@ -500,7 +512,9 @@ def handle_credential_offer(request):
 def handle_cred_offer_response(request):
     if request.method=='POST':
         form = SendCredentialResponseForm(request.POST)
-        if form.is_valid():
+        if not form.is_valid():
+            return render(request, 'indy/form_response.html', {'msg': 'Form error', 'msg_txt': str(form.errors)})
+        else:
             # log out of current wallet, if any
             wallet_name = request.session['wallet_name']
             raw_password = request.session['wallet_password']
@@ -578,7 +592,9 @@ def handle_cred_offer_response(request):
 def handle_proof_req_response(request):
     if request.method=='POST':
         form = SendProofReqResponseForm(request.POST)
-        if form.is_valid():
+        if not form.is_valid():
+            return render(request, 'indy/form_response.html', {'msg': 'Form error', 'msg_txt': str(form.errors)})
+        else:
             # log out of current wallet, if any
             wallet_name = request.session['wallet_name']
             raw_password = request.session['wallet_password']
@@ -656,7 +672,9 @@ def handle_proof_req_response(request):
 def handle_proof_select_claims(request):
     if request.method=='POST':
         form = SelectProofReqClaimsForm(request.POST)
-        if form.is_valid():
+        if not form.is_valid():
+            return render(request, 'indy/form_response.html', {'msg': 'Form error', 'msg_txt': str(form.errors)})
+        else:
             # log out of current wallet, if any
             wallet_name = request.session['wallet_name']
             raw_password = request.session['wallet_password']
@@ -681,6 +699,7 @@ def handle_proof_select_claims(request):
                 vcx_config = wallet.vcx_config
                 my_name = related_org[0].org_name
 
+            print("Look up conversation")
             # find conversation request
             conversations = VcxConversation.objects.filter(id=conversation_id).all()
             # TODO validate conversation id
@@ -691,6 +710,7 @@ def handle_proof_select_claims(request):
             my_connection = connections[0]
 
             # get selected attributes for proof request
+            print("Map requested attributes")
             requested_attributes = indy_conversation['proof_request_data']['requested_attributes']
             requested_predicates = indy_conversation['proof_request_data']['requested_predicates']
             credential_attrs = {}
@@ -729,7 +749,9 @@ def handle_proof_select_claims(request):
 def poll_conversation_status(request):
     if request.method=='POST':
         form = SendConversationResponseForm(request.POST)
-        if form.is_valid():
+        if not form.is_valid():
+            return render(request, 'indy/form_response.html', {'msg': 'Form error', 'msg_txt': str(form.errors)})
+        else:
             # log out of current wallet, if any
             wallet_name = request.session['wallet_name']
             raw_password = request.session['wallet_password']
@@ -794,7 +816,9 @@ def poll_conversation_status(request):
 def handle_select_proof_request(request):
     if request.method=='POST':
         form = SelectProofRequestForm(request.POST)
-        if form.is_valid():
+        if not form.is_valid():
+            return render(request, 'indy/form_response.html', {'msg': 'Form error', 'msg_txt': str(form.errors)})
+        else:
             cd = form.cleaned_data
 
             #now in the object cd, you have the form as a dictionary.
@@ -837,7 +861,9 @@ def handle_select_proof_request(request):
 def handle_send_proof_request(request):
     if request.method=='POST':
         form = SendProofRequestForm(request.POST)
-        if form.is_valid():
+        if not form.is_valid():
+            return render(request, 'indy/form_response.html', {'msg': 'Form error', 'msg_txt': str(form.errors)})
+        else:
             # log out of current wallet, if any
             wallet_name = request.session['wallet_name']
             raw_password = request.session['wallet_password']

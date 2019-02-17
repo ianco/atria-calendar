@@ -192,22 +192,21 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                      {'name':'myco_id', 'restrictions':[{'issuer_did': '$IRB_DID'}]},
                      {'name':'level', 'restrictions':[{'issuer_did': '$IRB_DID'}]}, 
                      {'name':'name', 'restrictions':[{'issuer_did': '$IRB_DID'}]}],
-                    [{'name': 'type','p_type': '>=','p_value': '$VALUE'}]
+                    []
                     )
                 # Proof of Suitability (to participate in study)
                 create_proof_request('MYco Proof of Suitability', 'Proof that a MYco Client is suitable according to the terms of the study',
                     [{'name':'short_name', 'restrictions':[{'issuer_did': '$MYCO_DID'}]},
                      {'name':'myco_id', 'restrictions':[{'issuer_did': '$MYCO_DID'}]}],
-                    [{'name': 'type','p_type': '>=','p_value': '$VALUE'},
-                     {'name': 'category','p_type': '>=','p_value': '$VALUE'},
-                     {'name': 'superclass','p_type': '>=','p_value': '$VALUE'}]
+                    [{'name': 'concentration','p_type': '>=','p_value': '$VALUE', 'restrictions':[{'issuer_did': '$MYCO_DID'}]}]
                     )
                 # Proof of Consent (to use data for study)
                 create_proof_request('MYco Proof of Consent', 'Proof that a MYco Client has consented to participate in study',
                     [{'name':'data_controller', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
                      {'name':'policy_url', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
                      {'name':'sensitive', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
-                     {'name':'sharing', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]}],
+                     {'name':'sharing', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
+                     {'name':'concentration', 'restrictions':[{'issuer_did': '$MYCO_DID'}]}],
                     []
                     )
 

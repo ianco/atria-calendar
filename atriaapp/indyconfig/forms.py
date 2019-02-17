@@ -135,7 +135,7 @@ class SendProofReqResponseForm(SendConversationResponseForm):
     # a bunch of fields that are read-only to present to the user
     from_partner_name = forms.CharField(label='Partner Name', max_length=30)
     proof_req_name = forms.CharField(label='Proof Request Name', max_length=40)
-    requested_attrs = forms.CharField(label='Requested Attrs', max_length=4000, widget=forms.HiddenInput)
+    requested_attrs = forms.CharField(label='Requested Attrs', widget=forms.HiddenInput)
 
     def __init__(self, *args, **kwargs):
         super(SendProofReqResponseForm, self).__init__(*args, **kwargs)
@@ -153,6 +153,7 @@ class SelectProofReqClaimsForm(SendProofReqResponseForm):
             field_attrs = json.loads(initial.get('requested_attrs', '{}'))
             for attr in field_attrs[0]['attrs']:
                 field_name = 'proof_req_attr_' + attr
+                print(field_name)
                 choices = []
                 claim_no = 0
                 if 0 < len(field_attrs[0]['attrs'][attr]):

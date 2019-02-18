@@ -1,12 +1,13 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 
-from .models import IndyWallet, VcxConnection
+from indyconfig.models import IndyWallet, VcxConnection
 
 
 class VcxConnectionSerializer(serializers.Serializer):
     wallet_name = serializers.CharField(max_length=30)
     partner_name = serializers.CharField(max_length=30)
+    token = serializers.CharField()
     invitation = serializers.CharField()
     status = serializers.CharField()
 

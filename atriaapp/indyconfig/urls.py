@@ -1,12 +1,9 @@
 from django.urls import path
 from django.conf.urls import url
 from rest_framework.urlpatterns import format_suffix_patterns
-#from rest_framework_swagger.views import get_swagger_view
 
 from .views import *
 
-
-#schema_view = get_swagger_view(title='Pastebin API')
 
 app_name = "indyconfig"
 
@@ -31,10 +28,4 @@ urlpatterns = [
     path('list_credentials/', list_wallet_credentials, name='list_credentials'),
     path('wallet_login/', handle_wallet_login, name='wallet_login'),
     path('wallet_logout/', handle_wallet_logout, name='wallet_logout'),
-
-    path('connections/', VcxConnectionView.as_view()),
-    path('invitation/<token>/', get_invitation_text, name='invitation'),
-#    url(r'^$', schema_view),
 ]
-
-#urlpatterns = format_suffix_patterns(urlpatterns)

@@ -10,7 +10,7 @@ from atriacalendar.urls import urlpatterns as atriacalendar_urlpatterns
 urlpatterns = [
     path('admin/', admin.site.urls),
     url(r'^api-auth/', include('rest_framework.urls')),
-    path('', include('atriacalendar.urls')),
+    path('api/', include('indyapi.urls')),
     path('i18n/', include('django.conf.urls.i18n')),
 ]
 

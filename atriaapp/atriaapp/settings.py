@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'swingtime',
     'atriacalendar',
+    'indyapi',
 ]
 
 def file_ext():

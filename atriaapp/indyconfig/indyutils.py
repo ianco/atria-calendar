@@ -483,14 +483,22 @@ def send_claims_for_proof_request(wallet, config, connection_data, partner_name,
         proof = run_coroutine_with_args(DisclosedProof.create, 'proof', json.loads(my_conversation.conversation_data))
         creds_for_proof = run_coroutine(proof.get_creds)
 
+        self_attested = {}
+
         for attr in creds_for_proof['attrs']:
             selected = credential_attrs[attr]
-            creds_for_proof['attrs'][attr] = {
-                'credential': creds_for_proof['attrs'][attr][selected]
-            }
+            if 0 < len(creds_for_proof['attrs'][attr]) and str.isdigit(selected):
+                creds_for_proof['attrs'][attr] = {
+                    'credential': creds_for_proof['attrs'][attr][int(selected)]
+                }
+            else:
+                self_attested[attr] = selected
+
+        for attr in self_attested:
+            del creds_for_proof['attrs'][attr]
 
         # generate and send proof
-        run_coroutine_with_args(proof.generate_proof, creds_for_proof, {})
+        run_coroutine_with_args(proof.generate_proof, creds_for_proof, self_attested)
         run_coroutine_with_args(proof.send_proof, my_connection)
 
         # serialize/deserialize proof 

@@ -716,12 +716,10 @@ def handle_proof_select_claims(request):
             credential_attrs = {}
             for attr in requested_attributes:
                 field_name = 'proof_req_attr_' + attr
-                choice = int(request.POST.get(field_name))
-                credential_attrs[attr] = choice
+                credential_attrs[attr] = request.POST.get(field_name)
             for attr in requested_predicates:
                 field_name = 'proof_req_attr_' + attr
-                choice = int(request.POST.get(field_name))
-                credential_attrs[attr] = choice
+                credential_attrs[attr] = request.POST.get(field_name)
 
             # send claims for this proof request to requestor
             try:

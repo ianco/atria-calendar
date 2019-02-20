@@ -133,7 +133,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
 
                 # schemas for the MYco business processes
                 # Health Certificate Credential
-                (schema_json, creddef_template) = create_schema_json('MYco Health-Certificate', random_schema_version(), [
+                (schema_json, creddef_template) = create_schema_json('MYco Health Certificate', random_schema_version(), [
                     'myco_id', 
                     'level', 
                     'name', 
@@ -150,7 +150,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                     ])
                 schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
                 # Research Project Credential
-                (schema_json, creddef_template) = create_schema_json('MYco Research-Project', random_schema_version(), [
+                (schema_json, creddef_template) = create_schema_json('MYco Research Project Certification', random_schema_version(), [
                     'project_name', 
                     'PI_last_name', 
                     'PI_first_name', 
@@ -165,6 +165,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                     'superclass', 
                     'output_type', 
                     'range', 
+                    'ethics_approval_description',
                     ])
                 schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
                 # Consent Credential
@@ -214,7 +215,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
 
             elif org_role == 'MYco':
                 # cred def to issue Health Certificate Credential
-                schemas = IndySchema.objects.filter(schema_name='MYco Health-Certificate').all()
+                schemas = IndySchema.objects.filter(schema_name='MYco Health Certificate').all()
                 schema = schemas[0]
                 creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
 
@@ -224,7 +225,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
 
             elif org_role == 'IRB':
                 # cred def to issue Research Project Credential
-                schemas = IndySchema.objects.filter(schema_name='MYco Research-Project').all()
+                schemas = IndySchema.objects.filter(schema_name='MYco Research Project Certification').all()
                 schema = schemas[0]
                 creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
 

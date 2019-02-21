@@ -150,7 +150,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                     ])
                 schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
                 # Research Project Credential
-                (schema_json, creddef_template) = create_schema_json('MYco Research Project Certification', random_schema_version(), [
+                (schema_json, creddef_template) = create_schema_json('MYco Research Project Ethics Approval', random_schema_version(), [
                     'project_name', 
                     'PI_last_name', 
                     'PI_first_name', 
@@ -185,6 +185,17 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                     'scopes', 
                     ])
                 schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
+                # Consent Credential
+                (schema_json, creddef_template) = create_schema_json('MYco Research Project Participation', random_schema_version(), [
+                    'project_name', 
+                    'PI_last_name', 
+                    'PI_first_name', 
+                    'institutional_affiliation',
+                    'project_description', 
+                    'myco_id', 
+                    'participation_description', 
+                    ])
+                schema = create_schema(wallet, json.loads(config), schema_json, creddef_template)
 
                 # standard proofs for the MYco business processes
                 # Proof of Ethics (to perform research)
@@ -208,8 +219,16 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                      {'name':'policy_url', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
                      {'name':'sensitive', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
                      {'name':'sharing', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
-                     {'name':'concentration', 'restrictions':[{'issuer_did': '$MYCO_DID'}]},
                      {'name':'user_comments'}],
+                    []
+                    )
+                # Proof of Data (data is revealed for study)
+                create_proof_request('MYco Proof of Data', 'Data revealed by a MYco Client for use in a study',
+                    [{'name':'data_controller', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
+                     {'name':'policy_url', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
+                     {'name':'sensitive', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
+                     {'name':'sharing', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
+                     {'name':'concentration', 'restrictions':[{'issuer_did': '$MYCO_DID'}]}],
                     []
                     )
 
@@ -225,7 +244,7 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
 
             elif org_role == 'IRB':
                 # cred def to issue Research Project Credential
-                schemas = IndySchema.objects.filter(schema_name='MYco Research Project Certification').all()
+                schemas = IndySchema.objects.filter(schema_name='MYco Research Project Ethics Approval').all()
                 schema = schemas[0]
                 creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
 
@@ -233,6 +252,9 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                 # receives credentials and provides proofs; not sure if they are an issuer
                 # TODO for now add a cred def to issue a Consent Credential to MYco Client (?)
                 schemas = IndySchema.objects.filter(schema_name='MYco Consent Enablement').all()
+                schema = schemas[0]
+                creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
+                schemas = IndySchema.objects.filter(schema_name='MYco Research Project Participation').all()
                 schema = schemas[0]
                 creddef = create_creddef(wallet, json.loads(config), schema, schema.schema_name + '-' + wallet_name, schema.schema_template)
 

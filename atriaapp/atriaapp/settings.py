@@ -74,6 +74,9 @@ INDY_CONFIG = {
     # bcovrin ledger for dflow demo
     #'ledger_url': 'http://dflow.bcovrin.vonx.io',
     #'vcx_genesis_url': 'http://dflow.bcovrin.vonx.io/genesis',
+    # sovrin test network (STN)
+    # ledger_url not used, set register_dids=False
+    #'vcx_genesis_url': 'https://raw.githubusercontent.com/sovrin-foundation/sovrin/master/sovrin/pool_transactions_sandbox_genesis',
 }
 
 REST_FRAMEWORK = {

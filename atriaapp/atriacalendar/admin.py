@@ -42,6 +42,10 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
         print(" >>> save success!!!")
         if not change:
+            # add a default calendar for the organization
+            calendar = AtriaCalendar(org_owner=obj, calendar_name='Events')
+            calendar.save()
+
             # register did (seed) before creating and provisioning wallet
             wallet_name = get_org_wallet_name(org_name)
             if org_role != 'Trustee':
@@ -303,5 +307,11 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
 
 admin.site.register(AtriaEventProgram)
 admin.site.register(AtriaEvent)
+admin.site.register(AtriaCalendar)
 admin.site.register(AtriaOrganization, AtriaOrganizationAdmin)
-
+admin.site.register(AtriaOrgAnnouncement)
+admin.site.register(RelationType)
+admin.site.register(AtriaRelationship)
+admin.site.register(EventAttendanceType)
+admin.site.register(AtriaBookmark)
+admin.site.register(AtriaEventAttendance)

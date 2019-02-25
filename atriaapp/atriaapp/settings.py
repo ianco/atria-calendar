@@ -106,6 +106,7 @@ MIDDLEWARE = [
     'indyconfig.simplemiddleware.SimpleMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'atriacalendar.middleware.URLPermissionsMiddleware',
 ]
 
 AUTHENTICATION_BACKENDS = ['indyconfig.indyauth.IndyBackend']
@@ -133,6 +134,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'atriaapp.wsgi.application'
 
 LOGOUT_REDIRECT_URL = '/'
+URL_PERMISSIONS = [
+    (r'/.*/neighbour', ('Volunteer', 'Attendee')),
+    (r'/.*/neighbour/.*', ('Volunteer', 'Attendee')),
+    (r'/.*/organization', ('Admin',)),
+    (r'/.*/organization/.*', ('Admin',)),
+]
 
 SWINGTIME = {
     'TIMESLOT_START_TIME': datetime.time(14),

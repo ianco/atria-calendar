@@ -22,6 +22,7 @@ from .forms import *
 from .models import *
 
 from indyconfig import models as indy_models
+from indyconfig.views import handle_wallet_login_internal
 
 
 class TranslatedFormMixin(object):
@@ -198,6 +199,58 @@ def add_atria_event(
 ####################################################################
 # Atria custom views:
 ####################################################################
+
+
+def url_namespace(role):
+    if role == 'Admin':
+        return 'organization:'
+    else:
+        return 'neighbour:'
+
+
+def init_user_session(sender, user, request, **kwargs):
+    target = request.POST.get('next', '/neighbour/')
+    if 'organization' in target:
+        if user.has_role('Admin'):
+            request.session['ACTIVE_ROLE'] = 'Admin'
+            orgs = AtriaRelationship.objects.filter(user=user).all()
+            if 0 < len(orgs):
+                sel_org = orgs[0].org
+                request.session['ACTIVE_ORG'] = str(sel_org.id)
+
+                # login as org wallet
+                sel_wallet = sel_org.wallet_name
+                config = json.loads(sel_wallet.vcx_config)
+                handle_wallet_login_internal(request, config['wallet_name'], config['wallet_key'])
+        else:
+            # TODO for now just set a dummy default - logged in user with no role assigned
+            request.session['ACTIVE_ROLE'] = 'Attendee'
+    else:
+        if user.has_role('Volunteer'):
+            request.session['ACTIVE_ROLE'] = 'Volunteer'
+        elif user.has_role('Attendee'):
+            request.session['ACTIVE_ROLE'] = 'Attendee'
+        else:
+            # TODO for now just set a dummy default - logged in user with no role assigned
+            request.session['ACTIVE_ROLE'] = 'Attendee'
+
+    role = request.session['ACTIVE_ROLE']
+    namespace = url_namespace(role)
+    request.session['URL_NAMESPACE'] = namespace
+
+
+def clear_user_session(sender, user, request, **kwargs):
+    if 'ACTIVE_ROLE' in request.session:
+        del request.session['ACTIVE_ROLE']
+    if 'ACTIVE_ORG' in request.session:
+        del request.session['ACTIVE_ORG']
+    request.session['URL_NAMESPACE'] = ''
+
+
+user_logged_in.connect(init_user_session)
+
+user_logged_out.connect(clear_user_session)
+
 
 class SignupView(CreateView):
     # form_class = SignUpForm

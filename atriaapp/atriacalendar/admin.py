@@ -235,6 +235,16 @@ class AtriaOrganizationAdmin(admin.ModelAdmin):
                      {'name':'concentration', 'restrictions':[{'issuer_did': '$MYCO_DID'}]}],
                     []
                     )
+                 # Proof of Age (two variations)
+                create_proof_request('Proof of Age 2', 'Proof of DOB 2',
+                    [{'name':'name', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]}],
+                    [{'name': 'age','p_type': '>=','p_value': '$VALUE', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]}]
+                    )
+                create_proof_request('Proof of DOB 2', 'Proof of DOB 2',
+                    [{'name':'first_name', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]},
+                     {'name':'last_name', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]}],
+                    [{'name': 'birth_date','p_type': '>=','p_value': '$VALUE', 'restrictions':[{'issuer_did': '$ISSUER_DID'}]}]
+                    )
 
             elif org_role == 'MYco':
                 # cred def to issue Health Certificate Credential

@@ -945,3 +945,9 @@ def list_wallet_credentials(request):
 
     return render(request, 'indy/list_credentials.html', {'wallet_name': 'No wallet selected', 'credentials': []})
 
+def neighbour_agent_view(request):
+    return render(request, 'indy/pagesProfiles/user.html')
+
+def organization_agent_view(request):
+    return render(request, 'indy/pagesProfiles/researcher.html')
+

@@ -135,6 +135,12 @@
                           	{% trans "View Calendar (old)" %}
                           </a>
                         </li>
+                        {% if namespace == 'neighbour:' %}
+						<li><a href="{% url 'indyconfig:user_agent' %}">Indy Agent</a></li>
+						{% endif %}
+                        {% if namespace == 'organization:' %}
+						<li><a href="{% url 'indyconfig:org_agent' %}">Indy Agent</a></li>
+						{% endif %}
 					</ul>
 				</div>
 

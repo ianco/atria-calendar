@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, include
 from django.conf.urls import url
 from rest_framework.urlpatterns import format_suffix_patterns
 
@@ -28,4 +28,7 @@ urlpatterns = [
     path('list_credentials/', list_wallet_credentials, name='list_credentials'),
     path('wallet_login/', handle_wallet_login, name='wallet_login'),
     path('wallet_logout/', handle_wallet_logout, name='wallet_logout'),
+    path('user_agent/', neighbour_agent_view, name='user_agent'),
+    path('org_agent/', organization_agent_view, name='org_agent'),
 ]
+

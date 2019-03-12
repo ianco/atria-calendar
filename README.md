@@ -61,6 +61,40 @@ It shows the credential flow implementing the data use consent process (user is 
 
 ## Install and run Atria Indy Community
 
+There are two options to run the environment locally - running in docker (recommended) or running all the services locally.
+
+### Running Atria Indy Community - Docker Version
+
+1. Open two bash shells, and run the following commands:
+
+```bash
+git clone https://github.com/ianco/von-network.git
+cd von-network
+./manage build
+./manage start
+```
+
+... and:
+
+```bash
+cd atria-calendar/docker
+./base-image  # note this takes about 30 mintues
+./manage start
+```
+
+That's it!  Your docker is up and running, open a browser and navigate to http://localhost:8000/
+
+To shut down the environment, <CTRL-C> to stop the docker services and then in each shell run:
+
+```bash
+./manage rm
+```
+
+
+### Running Atria Indy Community - "Bare Metal" Version
+
+If you compare to the previous option, these are basically all the steps executed to build the docker environment.
+
 Note it is recommended to build/run on either Ubuntu 16.04 or on the latest Mac o/s.
 
 1. Check out the following github repositories:

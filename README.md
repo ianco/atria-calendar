@@ -84,7 +84,7 @@ cd atria-calendar/docker
 
 That's it!  Your docker is up and running, open a browser and navigate to http://localhost:8000/
 
-To shut down the environment, <CTRL-C> to stop the docker services and then in each shell run:
+To shut down the environment, CTRL-C to stop the docker services and then in each shell run:
 
 ```bash
 ./manage rm

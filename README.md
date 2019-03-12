@@ -43,6 +43,22 @@ python manage.py runserver
 Navigate to http://localhost:8000/, or http://localhost:8000/admin and login as the admin user (admin@mail.com/pass1234).
 
 
+## Atria Indy Community Demo (Consent to use Data)
+
+There is a video demo of the VCX solution here:
+
+https://zoom.us/recording/share/wwD9uRGKRg31nPeI7MtYVpa-ufHowox1gNUaCNO7dmOwIumekTziMw
+
+It shows the credential flow implementing the data use consent process (user is consenting for their health data to be used for research purposes):
+
+0:00 - setup of organizations, schema and credential definitions
+8:00 - MYco issues health credentials to Alice
+16:00 - IRB issues research project credential to researcher
+19:40 - Researcher issues consent enablement credential to Alice
+23:40 - Researcher asks Alice to provide proof of eligibility (zero knowledge proof)
+30:00 - Researcher asks Alice to provide data with consent (revealed attributes)
+
+
 ## Install and run Atria Indy Community
 
 Note it is recommended to build/run on either Ubuntu 16.04 or on the latest Mac o/s.

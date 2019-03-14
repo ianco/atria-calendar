@@ -43,7 +43,57 @@ python manage.py runserver
 Navigate to http://localhost:8000/, or http://localhost:8000/admin and login as the admin user (admin@mail.com/pass1234).
 
 
+## Atria Indy Community Demo (Consent to use Data)
+
+There is a video demo of the VCX solution here:
+
+https://zoom.us/recording/share/wwD9uRGKRg31nPeI7MtYVpa-ufHowox1gNUaCNO7dmOwIumekTziMw
+
+It shows the credential flow implementing the data use consent process (user is consenting for their health data to be used for research purposes):
+
+0:00 - setup of organizations, schema and credential definitions
+8:00 - MYco issues health credentials to Alice
+16:00 - IRB issues research project credential to researcher
+19:40 - Researcher issues consent enablement credential to Alice
+23:40 - Researcher asks Alice to provide proof of eligibility (zero knowledge proof)
+30:00 - Researcher asks Alice to provide data with consent (revealed attributes)
+
+
 ## Install and run Atria Indy Community
+
+There are two options to run the environment locally - running in docker (recommended) or running all the services locally.
+
+### Running Atria Indy Community - Docker Version
+
+1. Open two bash shells, and run the following commands:
+
+```bash
+git clone https://github.com/ianco/von-network.git
+cd von-network
+./manage build
+./manage start
+```
+
+... and:
+
+```bash
+cd atria-calendar/docker
+./base-image  # note this takes about 30 mintues
+./manage start
+```
+
+That's it!  Your docker is up and running, open a browser and navigate to http://localhost:8000/
+
+To shut down the environment, CTRL-C to stop the docker services and then in each shell run:
+
+```bash
+./manage rm
+```
+
+
+### Running Atria Indy Community - "Bare Metal" Version
+
+If you compare to the previous option, these are basically all the steps executed to build the docker environment.
 
 Note it is recommended to build/run on either Ubuntu 16.04 or on the latest Mac o/s.
 

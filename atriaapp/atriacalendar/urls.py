@@ -13,7 +13,7 @@ from .views import *
 urlpatterns = [
     path('accounts/', include('django.contrib.auth.urls')),
     path('signup/', signup_view, name='signup'),
-    #path('signup/', SignupView.as_view(), name='signup'),
+    path('org_signup/', org_signup_view, name='org_signup'),
     path('dashboard', dashboard_view, name='dashboard'),
     path('contact', contact_view, name='contact'),
     path('event/', view_event_view, name='view_event'),

@@ -8,13 +8,15 @@ from django.views.generic.edit import CreateView, UpdateView
 from django.views.generic.list import ListView
 from django.urls import reverse
 
+from datetime import datetime
+
 from swingtime import forms as swingtime_forms
 from swingtime import views as swingtime_views
 
 import asyncio
 import json
 
-from indyconfig.indyutils import create_wallet, get_wallet_name, initialize_and_provision_vcx
+from indyconfig.indyutils import *
 
 from django.conf import settings
 
@@ -307,6 +309,103 @@ def signup_view(request):
             return redirect('calendar_home')
     else:
         form = SignUpForm()
+    return render(request, 'registration/signup.html', {'form': form})
+
+
+def org_signup_view(request):
+    if request.method == 'POST':
+        form = OrgSignUpForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('email')
+            raw_password = form.cleaned_data.get('password1')
+            user = authenticate(username=username, password=raw_password)
+            print(" >>> registered", username)
+
+            calendar = AtriaCalendar(user_owner=user, calendar_name='Events')
+            calendar.save()
+
+            # create an Indy wallet - derive wallet name from email, and re-use raw password
+            wallet_name = get_wallet_name(username)
+            print(" >>> create", wallet_name)
+            wallet_handle = create_wallet(wallet_name, raw_password)
+
+            # save the indy wallet first
+            wallet = indy_models.IndyWallet(wallet_name=wallet_name)
+            wallet.save()
+
+            user.wallet_name = wallet
+            user.save()
+
+            # provision VCX for this Org/Wallet
+            config = initialize_and_provision_vcx(wallet_name, raw_password, username)
+            wallet.vcx_config = config
+            wallet.save()
+            print(" >>> created wallet", wallet_name)
+
+            # now create the org and associate with the user
+            org_name = form.cleaned_data.get('org_name')
+            description = form.cleaned_data.get('description')
+            location = form.cleaned_data.get('location')
+            org_role = form.cleaned_data.get('org_role')
+            status = 'Active'
+            date_joined = datetime.now()
+            org = AtriaOrganization(
+                    org_name=org_name,
+                    description=description,
+                    location=location,
+                    org_role=org_role,
+                    status=status,
+                    date_joined=date_joined
+                )
+            org.save()
+
+            relation_types = RelationType.objects.filter(relation_type='Admin').all()
+            if 0 == len(relation_types):
+                relation_types = RelationType.objects.all()
+            relation = AtriaRelationship(
+                    user=user,
+                    org=org,
+                    relation_type=relation_types[0],
+                    status=status,
+                    effective_date=date_joined
+                )
+            relation.save()
+
+            calendar = AtriaCalendar(org_owner=org, calendar_name='Events')
+            calendar.save()
+
+            # register did (seed) before creating and provisioning wallet
+            wallet_name = get_org_wallet_name(org_name)
+            if org_role != 'Trustee':
+                # _nym_info is did and verkey, if we need it later (re-computed during agent initialization)
+                _nym_info = create_and_register_did(wallet_name, org_role)
+
+            # create an Indy wallet - derive wallet name from email, and re-use raw password
+            print(" >>> create", wallet_name)
+            wallet_handle = create_wallet(wallet_name, raw_password)
+            
+            # save the indy wallet first
+            wallet = indy_models.IndyWallet(wallet_name=wallet_name)
+            wallet.save()
+
+            org.wallet_name = wallet
+            org.save()
+
+            # provision VCX for this Org/Wallet
+            config = initialize_and_provision_vcx(wallet_name, raw_password, org_name, org_role=org_role)
+            wallet.vcx_config = config
+            wallet.save()
+
+            # create some schemas and cred defs for the org, based on role
+            create_schemas_creddefs(org, org_role, wallet)
+
+            # TODO need to auto-login with Atria custom user
+            #login(request, user)
+
+            return redirect('calendar_home')
+    else:
+        form = OrgSignUpForm()
     return render(request, 'registration/signup.html', {'form': form})
 
 

@@ -476,4 +476,3 @@ def search_neighbour_view(request):
 
 def search_organization_view(request):
     return render(request, 'atriacalendar/pagesSearch/organizationsSearch.html')
-
